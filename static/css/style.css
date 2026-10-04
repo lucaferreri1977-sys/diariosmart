@@ -2903,26 +2903,32 @@ body.app-body {
 }
 
 .btn-delete-subject {
-  background: transparent;
+  background: #ffffff;
   border: 1px solid #fecaca;
   color: #dc2626;
   border-radius: 8px;
-  width: 28px;
-  height: 28px;
+  padding: 5px 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
-  font-size: 13px;
   box-sizing: border-box;
+  white-space: nowrap;
+  line-height: 1;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(220, 38, 38, 0.05);
 }
 
 .btn-delete-subject:hover {
   background: #fee2e2;
-  border-color: #f87171;
+  border-color: #ef4444;
   color: #b91c1c;
-  transform: scale(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(220, 38, 38, 0.15);
 }
 
 .parent-today-subjects-grid {

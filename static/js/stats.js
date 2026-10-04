@@ -140,19 +140,21 @@ const StatsDashboard = {
       header.className = "parent-subject-header";
       header.innerHTML = `
         <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
-          <span class="subject-period-badge" style="font-size: 11px;">${sub.period_label || (sub.period_number + 'ª Ora')}</span>
-          <span style="font-weight: 800; font-size: 14px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+          <span style="font-weight: 800; font-size: 15px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
             ${sub.category_icon || '📚'} ${sub.subject_name}
           </span>
-          <span style="font-size: 11px; color: var(--text-muted);">${sub.start_time} - ${sub.end_time}</span>
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 600; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; white-space: nowrap;">
+            ${sub.start_time} - ${sub.end_time}
+          </span>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
           <span class="subject-progress-pill ${isComplete ? 'all-done' : ''}" style="font-size: 11px;">
             ${sStats.completed_tasks}/${sStats.total_tasks} ${isComplete ? '✓' : ''}
           </span>
           ${sStats.actual_minutes > 0 ? `<span class="time-badge act-good" style="font-size:11px;">⌛ ${sStats.actual_minutes}m</span>` : ''}
-          <button type="button" class="btn-delete-subject parent-only" title="Elimina questa materia dall'orario" style="background: #ffffff; border: 1px solid #fecaca; color: #dc2626; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
-            <span>🗑️ Elimina</span>
+          <button type="button" class="btn-delete-subject parent-only" title="Elimina questa materia dall'orario">
+            <span>🗑️</span>
+            <span>Elimina</span>
           </button>
         </div>
       `;

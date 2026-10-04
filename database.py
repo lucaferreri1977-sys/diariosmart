@@ -873,7 +873,7 @@ def get_daily_schedule(user_id: int, date_str: str) -> Dict[str, Any]:
             # Crea l'evento nel DB per questo giorno così i compiti possono essere salvati stabilmente
             new_ev_id = create_event(
                 title=slot["subject_name"],
-                description=f"Orario scolastico: {slot['period_number']}ª Ora ({slot['start_time']} - {slot['end_time']})",
+                description=f"Orario scolastico ({slot['start_time']} - {slot['end_time']})",
                 category_id=slot["category_id"],
                 event_date=date_str,
                 start_time=slot["start_time"],
@@ -910,7 +910,7 @@ def get_daily_schedule(user_id: int, date_str: str) -> Dict[str, Any]:
         subject_card = {
             "slot_id": slot["id"],
             "period_number": slot["period_number"],
-            "period_label": f"{slot['period_number']}ª Ora",
+            "period_label": "",
             "subject_name": slot["subject_name"],
             "category_id": slot["category_id"],
             "category_name": slot.get("category_name") or ev_details.get("category_name") or slot["subject_name"],

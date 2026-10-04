@@ -626,7 +626,6 @@ const Calendar = {
 
       card.innerHTML = `
         <div class="daily-event-top">
-          <span class="daily-event-period">${sub.period_label || (sub.period_number + 'ª Ora')}</span>
           <span class="daily-event-time">🕒 ${sub.start_time}${sub.end_time ? ' - ' + sub.end_time : ''}</span>
         </div>
         <div class="daily-event-title-row">
