@@ -3814,9 +3814,9 @@ body.app-body {
 
   .view-btn {
     flex: 1;
-    height: 32px;
+    height: 34px;
     padding: 0 4px;
-    font-size: 12px;
+    font-size: 13px !important;
     font-weight: 700;
     justify-content: center;
     text-align: center;
@@ -3832,6 +3832,7 @@ body.app-body {
     background: #ffffff !important;
     color: var(--primary) !important;
     font-weight: 800;
+    font-size: 13px !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
   }
 
@@ -4132,13 +4133,137 @@ body.app-body {
     gap: 6px;
   }
 
-  .stats-kpi-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+  /* Barra Filtro Statistiche */
+  .stats-header-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 14px 12px !important;
+    border-radius: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
-  .stats-kpi-card {
-    padding: 14px 12px;
+  .stats-header-bar h3 {
+    font-size: 16px !important;
+  }
+
+  .stats-controls {
+    width: 100% !important;
+  }
+
+  .stats-controls label {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .stats-controls .form-select {
+    flex: 1 !important;
+    max-width: none !important;
+  }
+
+  /* Schede KPI Analitiche - Fix Griglia per evitare auto-zoom out di Safari */
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .kpi-card {
+    padding: 10px 8px !important;
+    gap: 8px !important;
+    border-radius: 12px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+
+  .kpi-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    font-size: 18px !important;
+  }
+
+  .kpi-details {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .kpi-label {
+    font-size: 10px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+  }
+
+  .kpi-value-row {
+    flex-direction: column !important;
+    gap: 1px !important;
+    align-items: flex-start !important;
+  }
+
+  .kpi-value {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+  }
+
+  .kpi-sub {
+    font-size: 10px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* Sezione Grafici e Dettagli a 2 colonne su mobile */
+  .stats-two-col {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .stats-card {
+    padding: 14px 12px !important;
+    border-radius: 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .subject-bars-list {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .subject-bar-row {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .subject-bar-meta {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 3px !important;
+    font-size: 12px !important;
+  }
+
+  .overtime-tasks-list {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .overtime-task-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 10px 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   /* 5. Modali Mobile-Friendly */
