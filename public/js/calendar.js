@@ -13,6 +13,18 @@ const Calendar = {
   init() {
     if (this._initialized) return;
     this._initialized = true;
+
+    // Se oggi è Sabato o Domenica, posiziona di default il diario scolastico su Lunedì (prossimo giorno di scuola)
+    const today = new Date();
+    const dow = today.getDay();
+    if (dow === 0) { // Domenica
+      this.currentDate = new Date(today);
+      this.currentDate.setDate(today.getDate() + 1);
+    } else if (dow === 6) { // Sabato
+      this.currentDate = new Date(today);
+      this.currentDate.setDate(today.getDate() + 2);
+    }
+
     this.bindEvents();
     this.updateTitle();
   },
@@ -32,6 +44,9 @@ const Calendar = {
     document.getElementById("btnWeekNext")?.addEventListener("click", () => this.navigate(1));
     document.getElementById("btnWeekToday")?.addEventListener("click", () => {
       this.currentDate = new Date();
+      const dow = this.currentDate.getDay();
+      if (dow === 0) this.currentDate.setDate(this.currentDate.getDate() + 1);
+      else if (dow === 6) this.currentDate.setDate(this.currentDate.getDate() + 2);
       this.refresh();
     });
 
@@ -201,7 +216,10 @@ const Calendar = {
 
     try {
       const res = await API.getWeeklySchedule(weekStartStr);
-      if (!res.ok || !res.week) return;
+      if (!res.ok || !res.week) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--text-muted); grid-column:1/-1;">Nessun dato disponibile per questa settimana</div>`;
+        return;
+      }
 
       container.innerHTML = "";
 
@@ -243,8 +261,9 @@ const Calendar = {
         dayBody.className = "week-day-body";
 
         const renderedTaskIds = new Set();
+        const daySubjects = day.subjects || [];
 
-        if (day.subjects.length === 0 && (!day.extra_events || day.extra_events.length === 0)) {
+        if (daySubjects.length === 0 && (!day.extra_events || day.extra_events.length === 0)) {
           if (!day.is_weekend) {
             const emptyDiv = document.createElement("div");
             emptyDiv.className = "week-day-empty-msg";
@@ -253,7 +272,7 @@ const Calendar = {
           }
         } else {
           // Elenco Materie con i to-do sotto ad ogni materia
-          day.subjects.forEach(sub => {
+          daySubjects.forEach(sub => {
             const card = document.createElement("div");
             card.className = "week-subject-card";
             card.style.borderTop = `3px solid ${sub.category_color || '#3b82f6'}`;

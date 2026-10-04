@@ -35,14 +35,20 @@ const StatsDashboard = {
       this.selectedDayOfWeek = (dow === 0 || dow === 6) ? 1 : dow;
     }
 
-    // Calcola la data corrispondente al giorno selezionato nella settimana corrente
+    // Calcola la data corrispondente al giorno selezionato nella settimana attiva
     const todayDow = today.getDay() === 0 ? 7 : today.getDay();
     const monday = new Date(today);
-    monday.setDate(today.getDate() - (todayDow - 1));
+    if (todayDow >= 6) {
+      // Nel weekend la settimana scolastica da pianificare è quella imminente di Lunedì
+      monday.setDate(today.getDate() + (8 - todayDow));
+    } else {
+      monday.setDate(today.getDate() - (todayDow - 1));
+    }
 
     const targetDate = new Date(monday);
     targetDate.setDate(monday.getDate() + (this.selectedDayOfWeek - 1));
     const targetDateStr = Calendar.formatDateIso(targetDate);
+    this.currentTargetDateStr = targetDateStr;
 
     try {
       const [statsRes, schedRes] = await Promise.all([
@@ -260,7 +266,7 @@ const StatsDashboard = {
         input.value = "";
         input.disabled = true;
         try {
-          await API.quickCreateTask(sub.event_id, title, estMin);
+          await API.quickCreateTask(sub.event_id, title, estMin, this.currentTargetDateStr || null);
           if (typeof window.App?.showToast === "function") {
             window.App.showToast(`Compito assegnato a Giulio per ${sub.subject_name}!`, "📝");
           }

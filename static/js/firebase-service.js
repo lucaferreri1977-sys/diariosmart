@@ -87,9 +87,7 @@ const FirebaseService = {
   async getTimetable(userId = 2) {
     await this.init();
     try {
-      const snap = await this.db.collection("timetable_slots")
-        .where("user_id", "in", [Number(userId), 2])
-        .get();
+      const snap = await this.db.collection("timetable_slots").get();
 
       const slots = [];
       snap.forEach(doc => {
@@ -160,9 +158,7 @@ const FirebaseService = {
   async saveTimetable(slots, userId = 2) {
     await this.init();
     try {
-      const snap = await this.db.collection("timetable_slots")
-        .where("user_id", "in", [Number(userId), 2])
-        .get();
+      const snap = await this.db.collection("timetable_slots").get();
 
       const batch = this.db.batch();
       snap.forEach(doc => batch.delete(doc.ref));
@@ -335,7 +331,7 @@ const FirebaseService = {
       const monday = new Date(dt);
       monday.setDate(dt.getDate() - (dow - 1));
 
-      const weekDays = [];
+      const datePromises = [];
       for (let i = 0; i < 7; i++) {
         const day = new Date(monday);
         day.setDate(monday.getDate() + i);
@@ -343,9 +339,11 @@ const FirebaseService = {
         const m = String(day.getMonth() + 1).padStart(2, "0");
         const d = String(day.getDate()).padStart(2, "0");
         const dateStr = `${y}-${m}-${d}`;
-        const daySched = await this.getDailySchedule(dateStr, userId);
-        weekDays.push(daySched.schedule);
+        datePromises.push(this.getDailySchedule(dateStr, userId));
       }
+
+      const results = await Promise.all(datePromises);
+      const weekDays = results.map(r => r.schedule);
       return { ok: true, week: weekDays };
     } catch (err) {
       console.error("Firebase getWeeklySchedule errore:", err);
@@ -371,9 +369,15 @@ const FirebaseService = {
               const targetDow = parseInt(data.day_of_week);
               const now = new Date();
               const curDow = now.getDay() === 0 ? 7 : now.getDay();
-              const diff = targetDow - curDow;
-              const d = new Date(now);
-              d.setDate(now.getDate() + diff);
+              const monday = new Date(now);
+              if (curDow >= 6) {
+                // Nel weekend si pianifica la settimana scolastica imminente
+                monday.setDate(now.getDate() + (8 - curDow));
+              } else {
+                monday.setDate(now.getDate() - (curDow - 1));
+              }
+              const d = new Date(monday);
+              d.setDate(monday.getDate() + (targetDow - 1));
               const y = d.getFullYear();
               const m = String(d.getMonth() + 1).padStart(2, "0");
               const day = String(d.getDate()).padStart(2, "0");
@@ -385,9 +389,16 @@ const FirebaseService = {
 
       if (!taskDate) {
         const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, "0");
-        const day = String(now.getDate()).padStart(2, "0");
+        const curDow = now.getDay() === 0 ? 7 : now.getDay();
+        const monday = new Date(now);
+        if (curDow >= 6) {
+          monday.setDate(now.getDate() + (8 - curDow));
+        } else {
+          monday.setDate(now.getDate() - (curDow - 1));
+        }
+        const y = monday.getFullYear();
+        const m = String(monday.getMonth() + 1).padStart(2, "0");
+        const day = String(monday.getDate()).padStart(2, "0");
         taskDate = `${y}-${m}-${day}`;
       }
 

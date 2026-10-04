@@ -221,6 +221,14 @@ const App = {
         if (res.user.role === "parent") {
           this.switchView("stats");
         } else {
+          const now = new Date();
+          if (now.getDay() === 0) {
+            Calendar.currentDate = new Date(now);
+            Calendar.currentDate.setDate(now.getDate() + 1);
+          } else if (now.getDay() === 6) {
+            Calendar.currentDate = new Date(now);
+            Calendar.currentDate.setDate(now.getDate() + 2);
+          }
           this.switchView("agenda");
         }
       }
@@ -406,6 +414,14 @@ const App = {
       if (this.currentUser?.role === "parent") {
         this.switchView("stats");
       } else {
+        const now = new Date();
+        if (now.getDay() === 0) {
+          Calendar.currentDate = new Date(now);
+          Calendar.currentDate.setDate(now.getDate() + 1);
+        } else if (now.getDay() === 6) {
+          Calendar.currentDate = new Date(now);
+          Calendar.currentDate.setDate(now.getDate() + 2);
+        }
         this.switchView("agenda");
       }
     } catch (e) {
