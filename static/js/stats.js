@@ -152,9 +152,9 @@ const StatsDashboard = {
             ${sStats.completed_tasks}/${sStats.total_tasks} ${isComplete ? '✓' : ''}
           </span>
           ${sStats.actual_minutes > 0 ? `<span class="time-badge act-good" style="font-size:11px;">⌛ ${sStats.actual_minutes}m</span>` : ''}
-          <button type="button" class="btn-delete-subject parent-only" title="Elimina questa materia dall'orario">
-            <span>🗑️</span>
-            <span>Elimina</span>
+          <button type="button" class="btn-delete-subject parent-only" title="Elimina questa materia dall'orario" style="background:#ffffff !important; border:1px solid #fecaca !important; color:#dc2626 !important; border-radius:8px !important; padding:5px 12px !important; font-size:12px !important; font-weight:700 !important; cursor:pointer !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; gap:5px !important; width:auto !important; height:auto !important; min-width:auto !important; white-space:nowrap !important; line-height:1 !important; box-shadow:0 1px 2px rgba(220,38,38,0.06) !important;">
+            <span style="font-size:13px; line-height:1;">🗑️</span>
+            <span style="line-height:1;">Elimina</span>
           </button>
         </div>
       `;
