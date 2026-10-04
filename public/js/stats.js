@@ -198,9 +198,6 @@ const StatsDashboard = {
       card.className = "parent-subject-card";
       card.style.borderLeft = `4px solid ${sub.category_color || '#3b82f6'}`;
 
-      const sStats = sub.stats || { total_tasks: 0, completed_tasks: 0, actual_minutes: 0, estimated_minutes: 0 };
-      const isComplete = sStats.total_tasks > 0 && sStats.completed_tasks === sStats.total_tasks;
-
       // Header
       const header = document.createElement("div");
       header.className = "parent-subject-header";
@@ -214,10 +211,6 @@ const StatsDashboard = {
           </span>
         </div>
         <div class="parent-subject-header-actions">
-          <span class="subject-progress-pill ${isComplete ? 'all-done' : ''}" style="font-size: 11px;">
-            ${sStats.completed_tasks}/${sStats.total_tasks} ${isComplete ? '✓' : ''}
-          </span>
-          ${sStats.actual_minutes > 0 ? `<span class="time-badge act-good" style="font-size:11px;">⌛ ${sStats.actual_minutes}m</span>` : ''}
           <button type="button" class="btn-delete-subject parent-only" title="Elimina questa materia dall'orario">
             <span style="font-size:13px; line-height:1;">🗑️</span>
             <span style="line-height:1;">Elimina</span>
