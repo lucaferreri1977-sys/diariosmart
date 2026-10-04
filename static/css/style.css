@@ -4296,10 +4296,16 @@ body.app-body {
 
 /* ==================== SMARTPHONE E TABLET IN ORIZZONTALE (LANDSCAPE) ==================== */
 @media (orientation: landscape) and (min-width: 560px) {
+  /* Container e Nav Principale */
   .top-nav {
     height: 52px !important;
     min-height: 52px !important;
     padding: 6px 14px !important;
+    padding-left: max(14px, env(safe-area-inset-left)) !important;
+    padding-right: max(14px, env(safe-area-inset-right)) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     flex-wrap: nowrap !important;
   }
 
@@ -4324,86 +4330,164 @@ body.app-body {
     order: 3 !important;
   }
 
-  .daily-planner-container {
-    padding: 6px 8px !important;
-    gap: 10px !important;
+  /* Main Content & Daily Planner: allineamento bordi rigoroso */
+  .main-content {
+    padding: 10px 14px 24px 14px !important;
+    padding-left: max(14px, env(safe-area-inset-left)) !important;
+    padding-right: max(14px, env(safe-area-inset-right)) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
+  .daily-planner-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Barra di navigazione data: 100% larghezza, perfettamente allineata ai bordi sottostanti */
   .daily-nav-bar {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
     gap: 12px !important;
     padding: 8px 14px !important;
+    margin: 0 !important;
   }
 
   .daily-date-header {
     width: auto !important;
+    flex-shrink: 0 !important;
   }
 
   .daily-week-strip {
     width: auto !important;
     max-width: 60% !important;
+    flex-shrink: 1 !important;
   }
 
-  /* 2 COLONNE AFFIANCATE COME DA DESKTOP: MATERIE A SINISTRA, TODO A DESTRA */
+  /* 2 COLONNE AFFIANCATE: BORDI PERFETTAMENTE ALLINEATI ALLA BARRA SUPERIORE */
   .daily-two-col-layout {
     display: grid !important;
-    grid-template-columns: minmax(260px, 320px) 1fr !important;
-    gap: 16px !important;
+    grid-template-columns: clamp(230px, 32vw, 290px) minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 14px !important;
     align-items: start !important;
     margin-top: 10px !important;
   }
 
+  /* Colonna Sinistra: Materie */
   .daily-events-col {
-    padding: 14px 12px !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    padding: 12px 10px !important;
     border-radius: 16px !important;
   }
 
+  .events-col-header {
+    padding: 8px 10px !important;
+  }
+
+  .events-col-title-wrap h3 {
+    font-size: 15px !important;
+    margin: 0 !important;
+  }
+
+  /* Colonna Destra: Compiti e To-Do */
   .daily-todos-col {
-    padding: 14px 12px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 12px 14px !important;
     border-radius: 16px !important;
+    overflow: hidden !important;
   }
 
   .todos-header-top {
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 10px !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .todos-header-top h3 {
+    font-size: 15px !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
   }
 
   .todos-header-kpis {
     width: auto !important;
     justify-content: flex-end !important;
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .todo-kpi-chip {
+    padding: 3px 8px !important;
+    border-radius: 8px !important;
+  }
+
+  .todo-kpi-chip .chip-val {
+    font-size: 12px !important;
+  }
+
+  .todo-kpi-chip .chip-lbl {
+    font-size: 9px !important;
   }
 
   .quick-task-fields {
     display: flex !important;
     flex-wrap: nowrap !important;
     gap: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .quick-title-input {
-    flex: 1 1 auto !important;
-    width: auto !important;
+    flex: 1 1 0% !important;
     min-width: 0 !important;
+    width: 0 !important;
+    height: 38px !important;
+    font-size: 13px !important;
+    padding: 6px 10px !important;
   }
 
   .quick-est-select {
-    flex: 0 0 85px !important;
-    width: 85px !important;
+    flex: 0 0 76px !important;
+    width: 76px !important;
+    min-width: 76px !important;
+    height: 38px !important;
+    font-size: 12px !important;
+    padding: 4px 6px !important;
   }
 
   .quick-add-btn {
     flex: 0 0 auto !important;
     width: auto !important;
+    height: 38px !important;
     padding: 0 12px !important;
+    font-size: 13px !important;
+    white-space: nowrap !important;
   }
 
   .daily-todo-item-row {
-    padding: 10px 12px !important;
+    padding: 8px 10px !important;
     flex-wrap: nowrap !important;
     gap: 8px !important;
+    box-sizing: border-box !important;
   }
 
   .todo-item-left {
@@ -4417,3 +4501,4 @@ body.app-body {
     flex: 0 0 auto !important;
   }
 }
+
