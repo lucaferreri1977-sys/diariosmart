@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DiarioSmart - Diario & Calendario Scolastico</title>
-  <link rel="stylesheet" href="/css/style.css?v=5.5">
+  <link rel="stylesheet" href="/css/style.css?v=5.8">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -108,9 +108,18 @@
     <!-- Selettori Viste Principali -->
     <div class="nav-center">
       <div class="view-switcher" role="tablist">
-        <button class="view-btn parent-only" data-view="stats" id="tabStats" style="display: none;">📊 Dashboard Genitore</button>
-        <button class="view-btn active" data-view="agenda" id="tabAgenda">📅 Visione Giornaliera</button>
-        <button class="view-btn" data-view="week" id="tabWeek">🗓️ Visione Settimanale</button>
+        <button class="view-btn parent-only" data-view="stats" id="tabStats" style="display: none;">
+          <span class="tab-label-full">📊 Dashboard Genitore</span>
+          <span class="tab-label-short">📊 Genitore</span>
+        </button>
+        <button class="view-btn active" data-view="agenda" id="tabAgenda">
+          <span class="tab-label-full">📅 Visione Giornaliera</span>
+          <span class="tab-label-short">📅 Giornaliera</span>
+        </button>
+        <button class="view-btn" data-view="week" id="tabWeek">
+          <span class="tab-label-full">🗓️ Visione Settimanale</span>
+          <span class="tab-label-short">🗓️ Settimanale</span>
+        </button>
       </div>
     </div>
 
@@ -283,7 +292,7 @@
                 <span class="pill-label">Tempo Stimato:</span>
                 <span id="parentTodayEstTime">0m</span>
               </div>
-              <div class="today-kpi-pill" style="min-width: 140px;">
+              <div class="today-kpi-pill pill-progress">
                 <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:2px;">
                   <span>Avanzamento</span>
                   <strong id="parentTodayProgressPercent">0%</strong>
@@ -638,12 +647,12 @@
   <!-- Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-service.js?v=5.7"></script>
-  <script src="/js/api.js?v=5.7"></script>
-  <script src="/js/timer.js?v=5.7"></script>
-  <script src="/js/calendar.js?v=5.7"></script>
-  <script src="/js/stats.js?v=5.7"></script>
-  <script src="/js/app.js?v=5.7"></script>
+  <script src="/js/firebase-service.js?v=5.8"></script>
+  <script src="/js/api.js?v=5.8"></script>
+  <script src="/js/timer.js?v=5.8"></script>
+  <script src="/js/calendar.js?v=5.8"></script>
+  <script src="/js/stats.js?v=5.8"></script>
+  <script src="/js/app.js?v=5.8"></script>
   <script>
     // Gestione universale e immediata apertura/chiusura modale Aggiungi Materia
     window.openSubjectModal = function(preselectedDow) {
