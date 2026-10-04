@@ -8,18 +8,21 @@ import auth
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "calendar.db")
 if os.environ.get("VERCEL"):
     DB_PATH = "/tmp/calendar.db"
-    src_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "calendar.db")
-    if not os.path.exists(DB_PATH) and os.path.exists(src_db):
-        import shutil
-        try:
-            shutil.copy2(src_db, DB_PATH)
-        except Exception:
-            pass
+
+def ensure_db_ready():
+    """Assicura che il database sia presente e inizializzato, specialmente su Vercel (/tmp)."""
+    if os.environ.get("VERCEL"):
+        src_db = os.path.join(os.path.dirname(os.path.abspath(__file__)), "calendar.db")
+        if not os.path.exists(DB_PATH) and os.path.exists(src_db):
+            import shutil
+            try:
+                shutil.copy2(src_db, DB_PATH)
+            except Exception:
+                pass
 
 def get_connection():
     """Restituisce una connessione al database SQLite con foreign keys abilitate."""
-    if os.environ.get("VERCEL") and not os.path.exists(DB_PATH):
-        init_db()
+    ensure_db_ready()
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")

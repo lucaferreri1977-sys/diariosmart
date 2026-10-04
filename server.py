@@ -7,7 +7,8 @@ import database
 import auth
 
 PORT = 8000
-STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+PUBLIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "public")
+STATIC_DIR = PUBLIC_DIR if os.path.exists(PUBLIC_DIR) else os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
 class CalendarRequestHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
@@ -73,10 +74,31 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
         self.end_headers()
 
+    def get_request_path_and_query(self):
+        raw_path = self.headers.get("x-matched-path") or self.headers.get("x-forwarded-url") or self.path
+        parsed = urllib.parse.urlparse(raw_path)
+        path = parsed.path
+        query = urllib.parse.parse_qs(parsed.query)
+
+        if "__route" in query:
+            sub = query["__route"][0].lstrip("/")
+            path = f"/api/{sub}"
+            del query["__route"]
+
+        if self.path and "?" in self.path:
+            self_parsed = urllib.parse.urlparse(self.path)
+            self_query = urllib.parse.parse_qs(self_parsed.query)
+            if "__route" in self_query and (path == "/api/index.py" or path == "/api" or path == "/api/"):
+                sub = self_query["__route"][0].lstrip("/")
+                path = f"/api/{sub}"
+            for k, v in self_query.items():
+                if k != "__route" and k not in query:
+                    query[k] = v
+
+        return path, query
+
     def do_GET(self):
-        parsed_url = urllib.parse.urlparse(self.path)
-        path = parsed_url.path
-        query = urllib.parse.parse_qs(parsed_url.query)
+        path, query = self.get_request_path_and_query()
 
         # Gestione API
         if path.startswith("/api/"):
@@ -191,8 +213,7 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         return self.send_json(404, {"ok": False, "error": f"Endpoint GET non trovato: {path}"})
 
     def do_POST(self):
-        parsed_url = urllib.parse.urlparse(self.path)
-        path = parsed_url.path
+        path, _ = self.get_request_path_and_query()
         body = self.parse_body()
 
         # Login
@@ -374,8 +395,7 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         return self.send_json(404, {"ok": False, "error": f"Endpoint POST non trovato: {path}"})
 
     def do_PUT(self):
-        parsed_url = urllib.parse.urlparse(self.path)
-        path = parsed_url.path
+        path, _ = self.get_request_path_and_query()
         body = self.parse_body()
         user = self.get_current_user()
         if not user:
@@ -442,8 +462,7 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         return self.send_json(404, {"ok": False, "error": f"Endpoint PUT non trovato: {path}"})
 
     def do_PATCH(self):
-        parsed_url = urllib.parse.urlparse(self.path)
-        path = parsed_url.path
+        path, _ = self.get_request_path_and_query()
         body = self.parse_body()
         user = self.get_current_user()
         if not user:
@@ -459,8 +478,7 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         return self.send_json(404, {"ok": False, "error": f"Endpoint PATCH non trovato: {path}"})
 
     def do_DELETE(self):
-        parsed_url = urllib.parse.urlparse(self.path)
-        path = parsed_url.path
+        path, query = self.get_request_path_and_query()
         user = self.get_current_user()
         if not user:
             return self.send_json(401, {"ok": False, "error": "Non autorizzato"})
@@ -468,7 +486,6 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         # Elimina Evento
         if path.startswith("/api/events/") and path.count("/") == 3:
             event_id = int(path.split("/")[3])
-            query = urllib.parse.parse_qs(parsed_url.query)
             delete_all = query.get("all_recurring", ["false"])[0].lower() == "true"
             success = database.delete_event(event_id, delete_all_recurring=delete_all)
             return self.send_json(200, {"ok": success})

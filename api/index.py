@@ -10,6 +10,7 @@ import database
 from server import CalendarRequestHandler
 
 # Assicura inizializzazione DB su serverless
+database.ensure_db_ready()
 database.init_db()
 
 class handler(CalendarRequestHandler):

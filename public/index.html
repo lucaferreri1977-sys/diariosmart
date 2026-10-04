@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DiarioSmart - Diario & Calendario Scolastico</title>
+  <link rel="stylesheet" href="/css/style.css?v=4.1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="app-body">
+  <!-- ==================== SCHERMATA DI LOGIN ==================== -->
+  <div id="loginScreen" class="login-fullscreen-container hidden">
+    <div class="login-panel-card">
+      <div class="login-brand-header">
+        <div class="login-brand-icon">🎒</div>
+        <h1 class="login-brand-title">DiarioSmart</h1>
+        <p class="login-brand-subtitle">Diario Scolastico & Calendario di Studio</p>
+      </div>
+
+      <div class="login-question-badge">
+        <span>👋 Chi sta usando l'app? Seleziona il tuo profilo</span>
+      </div>
+
+      <div id="loginScreenError" class="alert alert-danger hidden" style="margin-bottom: 20px;"></div>
+
+      <div class="login-profiles-grid">
+        <!-- PROFILO 1: GIULIO -->
+        <div class="login-profile-card child-profile-card">
+          <div class="profile-card-top">
+            <div class="profile-avatar-circle child-avatar">🧒</div>
+            <div class="profile-meta">
+              <span class="profile-badge badge-child">🎒 Studente</span>
+              <h2 class="profile-name">Giulio</h2>
+            </div>
+          </div>
+          <p class="profile-desc">
+            Visualizza l'orario scolastico di oggi, spunta i compiti completati e usa l'orologio visivo per studiare con concentrazione.
+          </p>
+          <div class="profile-features-list">
+            <div class="feature-item">✓ Orario scolastico delle materie di oggi</div>
+            <div class="feature-item">✓ Lista to-do compiti con spunte immediate</div>
+            <div class="feature-item">✓ Orologio con conto alla rovescia</div>
+          </div>
+          <form id="childLoginForm" class="parent-login-inline-form">
+            <div class="form-group" style="margin-bottom: 12px; text-align: left;">
+              <label for="childLoginPassword" style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Password</label>
+              <div class="password-input-wrap">
+                <input type="password" id="childLoginPassword" class="form-control" placeholder="••••••••" autocomplete="current-password" required>
+              </div>
+            </div>
+            <button type="submit" class="btn-profile-access btn-child-access" id="btnLoginAsGiulio">
+              <span>🎒 Entra come Giulio</span>
+              <span class="btn-arrow">→</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- PROFILO 2: GENITORE -->
+        <div class="login-profile-card parent-profile-card">
+          <div class="profile-card-top">
+            <div class="profile-avatar-circle parent-avatar">👨‍👧‍👦</div>
+            <div class="profile-meta">
+              <span class="profile-badge badge-parent">🛡️ Controllo Genitore</span>
+              <h2 class="profile-name">Genitore</h2>
+            </div>
+          </div>
+          <p class="profile-desc">
+            Dashboard di controllo: monitora i tempi di studio reali di Giulio, le difficoltà, assegna compiti e imposta l'orario settimanale.
+          </p>
+          <form id="parentLoginForm" class="parent-login-inline-form">
+            <div class="form-group" style="margin-bottom: 12px; text-align: left;">
+              <label for="parentLoginPassword" style="font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">Password</label>
+              <div class="password-input-wrap">
+                <input type="password" id="parentLoginPassword" class="form-control" placeholder="••••••••" autocomplete="current-password" required>
+              </div>
+            </div>
+            <button type="submit" class="btn-profile-access btn-parent-access" id="btnLoginAsParent">
+              <span>🛡️ Accedi alla Dashboard Genitore</span>
+              <span class="btn-arrow">→</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="login-footer-info">
+        <span>DiarioSmart • Progettato per stimolare l'autonomia scolastica di Giulio e fornire ai genitori una dashboard dedicata.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== INTERFACCIA PRINCIPALE DELL'APP ==================== -->
+  <div id="appShell" class="app-shell">
+
+  <!-- ==================== TOP NAVIGATION ==================== -->
+  <header class="top-nav">
+    <div class="nav-left">
+      <div class="brand" id="brandHomeBtn" role="button" tabindex="0" title="Vai alla pagina iniziale (Oggi)">
+        <div class="brand-icon">🎒</div>
+        <div class="brand-text">
+          <h1>DiarioSmart</h1>
+          <span class="brand-subtitle">Diario & Calendario Scolastico</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Selettori Viste Principali -->
+    <div class="nav-center">
+      <div class="view-switcher" role="tablist">
+        <button class="view-btn parent-only" data-view="stats" id="tabStats" style="display: none;">📊 Dashboard Genitore</button>
+        <button class="view-btn active" data-view="agenda" id="tabAgenda">📅 Visione Giornaliera</button>
+        <button class="view-btn" data-view="week" id="tabWeek">🗓️ Visione Settimanale</button>
+      </div>
+    </div>
+
+    <!-- Azioni e Profilo Utente -->
+    <div class="nav-right">
+      <!-- Badge informativo profilo (non cliccabile, nessun popup) -->
+      <div id="userProfileBadge" class="user-pill-static" title="Profilo attivo">
+        <span id="userName" class="user-name">Giulio</span>
+      </div>
+
+      <!-- Pulsante di Logout affiancato al profilo -->
+      <button id="btnLogout" class="btn-logout" title="Disconnettiti dall'account">
+        <span class="logout-icon">🚪</span>
+        <span class="logout-text">Esci</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== CONTENUTO PRINCIPALE ==================== -->
+  <main class="main-content">
+    
+    <!-- ==================== VISTA GIORNALIERA A 2 COLONNE: EVENTI A SINISTRA, TODO A DESTRA ==================== -->
+    <section id="viewAgenda" class="view-container active">
+      <div class="daily-planner-container">
+        <!-- Barra di Navigazione Data: Solo Avanti, Indietro, Oggi e Data selezionata -->
+        <div class="daily-nav-bar">
+          <div class="daily-date-header">
+            <div class="daily-nav-arrows">
+              <button id="btnDailyPrev" class="btn-icon-sq" title="Giorno precedente">‹</button>
+              <button id="btnDailyToday" class="btn-ghost-sm">Oggi</button>
+              <button id="btnDailyNext" class="btn-icon-sq" title="Giorno successivo">›</button>
+            </div>
+            <div class="daily-date-text">
+              <h2 id="dailyDateTitle">Caricamento data...</h2>
+            </div>
+          </div>
+        </div>
+
+        <!-- LAYOUT A 2 COLONNE: SINISTRA EVENTI/MATERIE, DESTRA TUTTI I TO-DO -->
+        <div class="daily-two-col-layout">
+          
+          <!-- COLONNA SINISTRA: ELENCO EVENTI/MATERIE DEL GIORNO -->
+          <aside class="daily-events-col">
+            <div class="events-col-header">
+              <div class="events-col-title-wrap">
+                <h3>Materie del Giorno</h3>
+                <button id="btnResetTodosFilter" class="btn-reset-filter hidden" title="Rimuovi filtro materia e mostra tutti i todo del giorno">
+                  ✕ Mostra tutti i todo del giorno
+                </button>
+              </div>
+            </div>
+
+            <div id="dailyEventsList" class="daily-events-cards-list">
+              <!-- Schede delle materie iniettate da calendar.js -->
+            </div>
+          </aside>
+
+          <!-- COLONNA DESTRA: I TODO DI QUELLA GIORNATA (TUTTI UNO SOTTO L'ALTRO) -->
+          <section class="daily-todos-col">
+            <div class="todos-col-header">
+              <div class="todos-header-top">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <h3 id="todosColTitle">📝 COMPITI & TO-DO DI OGGI</h3>
+                </div>
+                <div class="todos-header-kpis">
+                  <div class="todo-kpi-chip">
+                    <span class="chip-val" id="dailyTotalTasks">0/0</span>
+                    <span class="chip-lbl">Fatti</span>
+                  </div>
+                  <div class="todo-kpi-chip">
+                    <span class="chip-val" id="dailyEstimatedTime">0m</span>
+                    <span class="chip-lbl">Stima</span>
+                  </div>
+                  <div class="todo-kpi-chip">
+                    <span class="chip-val" id="dailyActualTime">0m</span>
+                    <span class="chip-lbl">Impiegato</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Barra di avanzamento to-do -->
+              <div class="todos-progress-container">
+                <div class="todos-prog-info">
+                  <span>Avanzamento Compiti di Oggi</span>
+                  <strong id="dailyProgressPercent">0%</strong>
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill" id="dailyProgressBar" style="width: 0%;"></div>
+                </div>
+              </div>
+
+              <!-- Box rapido per aggiungere un to-do -->
+              <form id="dailyQuickTaskForm" class="daily-quick-task-bar">
+                <div class="quick-task-fields">
+                  <input type="text" id="quickTaskTitleInput" class="form-control quick-title-input" placeholder="✏️ Aggiungi un compito o esercizio da fare..." required />
+                  <select id="quickTaskEstSelect" class="form-select quick-est-select" title="Tempo stimato">
+                    <option value="15">⏱️ 15m</option>
+                    <option value="20">⏱️ 20m</option>
+                    <option value="25" selected>⏱️ 25m</option>
+                    <option value="30">⏱️ 30m</option>
+                    <option value="45">⏱️ 45m</option>
+                    <option value="60">⏱️ 60m</option>
+                  </select>
+                  <button type="submit" class="btn-primary quick-add-btn">
+                    <span>+ Aggiungi</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Flusso unificato dei to-do uno sotto l'altro -->
+            <div id="dailyUnifiedTodosList" class="daily-todos-stream">
+              <!-- Tutti i to-do items generati uno sotto l'altro con checkbox, badge materia, stima, e timer -->
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISTA SETTIMANA CON PREVIEW EVENTI & TO-DO ==================== -->
+    <section id="viewWeek" class="view-container">
+      <div class="week-planner-container">
+        <div class="week-nav-bar">
+          <div class="week-date-header">
+            <h2 id="weekDateRangeTitle">Settimana</h2>
+            <span class="week-subtitle">Visione settimanale con preview degli eventi e dei to-do per ogni giorno</span>
+          </div>
+          <div class="week-nav-actions">
+            <button id="btnWeekPrev" class="btn-ghost-sm">‹ Settimana prec.</button>
+            <button id="btnWeekToday" class="btn-secondary btn-sm">Questa Settimana</button>
+            <button id="btnWeekNext" class="btn-ghost-sm">Settimana succ. ›</button>
+          </div>
+        </div>
+
+        <!-- Griglia dei 7 Giorni con Preview Eventi e To-Do -->
+        <div id="weekViewContainer" class="week-overview-grid">
+          <!-- Colonne generate dinamicamente per ogni giorno -->
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ==================== VISTA DASHBOARD GENITORE (SEPARATA) ==================== -->
+    <section id="viewStats" class="view-container">
+      <div class="parent-dashboard-container">
+        
+
+        <!-- 2. Monitor Live Compiti & Gestione Materie per Giulio -->
+        <div class="card parent-today-monitor-card">
+          <!-- Riga Superiore: Badge e Riepilogo KPI del Giorno -->
+          <div class="parent-monitor-top-row">
+            <span class="section-badge-blue">📚 Orario Scolastico & Materie</span>
+            
+            <div class="today-kpi-summary-strip">
+              <div class="today-kpi-pill">
+                <span class="pill-label">Compiti:</span>
+                <strong id="parentTodayTasksCount">0/0</strong>
+              </div>
+              <div class="today-kpi-pill">
+                <span class="pill-label">Tempo Impiegato:</span>
+                <strong id="parentTodayActualTime">0m</strong>
+              </div>
+              <div class="today-kpi-pill">
+                <span class="pill-label">Tempo Stimato:</span>
+                <span id="parentTodayEstTime">0m</span>
+              </div>
+              <div class="today-kpi-pill" style="min-width: 140px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:2px;">
+                  <span>Avanzamento</span>
+                  <strong id="parentTodayProgressPercent">0%</strong>
+                </div>
+                <div class="progress-bar-container" style="height:6px;">
+                  <div class="progress-bar-fill" id="parentTodayProgressBar" style="width:0%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Barra degli Strumenti: Giorni a Sinistra, Pulsante Aggiungi Materia a Destra -->
+          <div class="parent-toolbar-row">
+            <div class="parent-day-tabs-bar" id="parentDayTabsBar">
+              <!-- Generato dinamicamente da stats.js con i bottoni Lunedì, Martedì, ecc. -->
+            </div>
+            <button type="button" id="btnParentAddSubject" class="btn-primary parent-only" onclick="window.openSubjectModal()">
+              <span>Aggiungi Materia</span>
+            </button>
+          </div>
+
+          <div class="parent-today-subjects-wrap" style="margin-top: 12px;">
+            <div id="parentTodaySubjectsList" class="parent-today-subjects-grid">
+              <!-- Righe materie di oggi caricate dinamicamente -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Barra Filtri e Periodo Analitico -->
+        <div class="stats-header-bar" style="margin-top: 24px;">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 800;">📊 Analitiche e Rendimento Studio</h3>
+            <p class="subtitle" style="font-size: 13px;">Analisi statistica delle sessioni di studio, rispetto delle stime temporali e precisione.</p>
+          </div>
+          <div class="stats-controls">
+            <label style="font-size: 13px; font-weight: 600; color: var(--text-muted); display:flex; align-items:center; gap:6px;">
+              <span>Periodo:</span>
+              <select id="statsPeriodSelect" class="form-select">
+                <option value="7">Ultimi 7 giorni</option>
+                <option value="14">Ultimi 14 giorni</option>
+                <option value="30">Questo mese (30 giorni)</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <!-- 4. Schede KPI Analitiche -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon bg-blue">⏱️</div>
+            <div class="kpi-details">
+              <span class="kpi-label">Tempo Totale Studio</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value" id="kpiActualTime">0h 0m</span>
+                <span class="kpi-sub" id="kpiEstimatedTime">stima: 0h 0m</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon bg-green">✅</div>
+            <div class="kpi-details">
+              <span class="kpi-label">Compiti Completati</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value" id="kpiCompletionRate">0%</span>
+                <span class="kpi-sub" id="kpiCompletedTasksCount">0 di 0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon bg-amber">⚡</div>
+            <div class="kpi-details">
+              <span class="kpi-label">Scostamento Medio</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value" id="kpiTimeDiff">0m</span>
+                <span class="kpi-sub" id="kpiDiffStatus">in linea</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon bg-purple">📚</div>
+            <div class="kpi-details">
+              <span class="kpi-label">Materia più Impegnativa</span>
+              <div class="kpi-value-row">
+                <span class="kpi-value" id="kpiTopSubject">-</span>
+                <span class="kpi-sub" id="kpiTopSubjectHours">0 ore</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Sezione Grafici e Dettagli: Distribuzione + Alert Scostamento -->
+        <div class="stats-two-col">
+          <!-- Distribuzione Tempo per Materia -->
+          <div class="card stats-card">
+            <div class="card-title-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3>📚 Distribuzione Tempo per Materia</h3>
+              <span class="user-role-badge" style="background:#e0e7ff; color:#3730a3;">Stimato vs Reale</span>
+            </div>
+            <p class="card-desc">Confronta il tempo stimato con quello effettivamente impiegato da Giulio per ciascuna materia.</p>
+            <div id="subjectBarsContainer" class="subject-bars-list">
+              <!-- Barre orizzontali comparative -->
+            </div>
+          </div>
+
+          <!-- Compiti con Maggiore Scostamento (Alert Genitore) -->
+          <div class="card stats-card">
+            <div class="card-title-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h3>⚠️ Alert Scostamento & Difficoltà</h3>
+              <span class="user-role-badge" style="background:#fee2e2; color:#b91c1c;">Attenzione richiesta</span>
+            </div>
+            <p class="card-desc">Attività in cui Giulio ha impiegato più tempo del previsto (possibile indicatore di difficoltà o stima da correggere insieme).</p>
+            <div id="overtimeTasksList" class="overtime-tasks-list">
+              <!-- Elenco task con scostamento -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+  </div> <!-- ==================== FINE INTERFACCIA APP SHELL ==================== -->
+
+  <!-- ==================== MODALE 1: DETTAGLIO EVENTO & TODO LISTS ==================== -->
+  <div id="eventDetailModal" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span id="modalEventCategoryBadge" class="category-badge">Materia</span>
+          <h2 id="modalEventTitle">Titolo Evento</h2>
+          <div class="modal-event-meta" id="modalEventMeta">
+            📅 Data • 🕒 Orario • 👤 Assegnato
+          </div>
+        </div>
+        <button class="modal-close-btn" data-close-modal="eventDetailModal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p id="modalEventDescription" class="event-desc-text"></p>
+
+        <!-- Riepilogo Progresso Evento -->
+        <div class="event-progress-strip">
+          <div class="progress-info">
+            <span class="progress-label">Avanzamento Compiti:</span>
+            <strong id="modalEventTaskCounts">0/0 completati</strong>
+          </div>
+          <div class="progress-times">
+            <span class="time-tag est" id="modalEventEstTotal">Stimato: 0m</span>
+            <span class="time-tag act" id="modalEventActTotal">Impiegato: 0m</span>
+          </div>
+        </div>
+
+        <!-- Sezione Liste di Compiti (To-Do Lists collegate) -->
+        <div class="todo-lists-section">
+          <div class="todo-lists-header">
+            <h3>📋 Liste di Compiti Collegate</h3>
+            <button id="btnAddTodoList" class="btn-secondary btn-sm">+ Nuova Lista per questo Evento</button>
+          </div>
+
+          <div id="modalTodoListsContainer" class="todo-lists-container">
+            <!-- Liste di compiti e singoli task iniettati qui -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: flex-end;">
+        <button class="btn-primary" data-close-modal="eventDetailModal">Salva e Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODALE 2: CREA / MODIFICA EVENTO ==================== -->
+  <div id="eventFormModal" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="eventFormTitle">Nuovo Evento nel Calendario</h2>
+        <button class="modal-close-btn" data-close-modal="eventFormModal">✕</button>
+      </div>
+
+      <form id="eventForm" class="modal-form">
+        <div class="modal-body">
+          <input type="hidden" id="eventFormId" value="">
+
+          <div class="form-group">
+            <label for="eventTitleInput">Titolo Evento *</label>
+            <input type="text" id="eventTitleInput" class="form-control" placeholder="es. Compiti di Matematica, Studio Storia, Allenamento..." required>
+          </div>
+
+          <div class="form-group">
+            <label for="eventDateInput">📅 Data *</label>
+            <input type="date" id="eventDateInput" class="form-control" required>
+          </div>
+
+          <div class="form-row" id="timeFieldsRow">
+            <div class="form-group col">
+              <label for="eventStartTimeInput">🕒 Ora Inizio</label>
+              <input type="time" id="eventStartTimeInput" class="form-control" value="15:00">
+            </div>
+            <div class="form-group col">
+              <label for="eventEndTimeInput">🕒 Ora Fine</label>
+              <input type="time" id="eventEndTimeInput" class="form-control" value="16:30">
+            </div>
+          </div>
+
+          <!-- Opzione Cadenza Settimanale (Spunta) -->
+          <div class="form-group recurrence-card-box" style="background: var(--border-subtle); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-top: 6px; margin-bottom: 6px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <label class="checkbox-container" style="font-weight: 700; margin: 0; cursor: pointer;">
+                <input type="checkbox" id="eventRecurringWeeklyCheck">
+                <span class="checkmark"></span>
+                🔁 Ripeti ogni settimana (cadenza settimanale)
+              </label>
+            </div>
+            <div id="recurringWeeksRow" style="display: none; align-items: center; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0;">
+              <label for="repeatWeeksSelect" style="font-size: 12px; font-weight: 600; color: var(--text-muted); margin: 0;">Ripeti per:</label>
+              <select id="repeatWeeksSelect" class="form-select" style="width: auto; padding: 4px 10px; font-size: 12px;">
+                <option value="4">4 settimane (1 mese)</option>
+                <option value="8" selected>8 settimane (2 mesi)</option>
+                <option value="12">12 settimane (3 mesi / trimestre)</option>
+                <option value="24">24 settimane (metà anno)</option>
+                <option value="36">36 settimane (intero anno scolastico)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-close-modal="eventFormModal">Annulla</button>
+          <button type="submit" class="btn-primary" id="btnSaveEvent">Salva Evento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ==================== MODALE 5: OROLOGIO VISIVO ==================== -->
+  <div id="visualTimerModal" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-pomodoro-dialog">
+      <div class="modal-header" style="border:none; padding-bottom: 0;">
+        <div style="text-align: left;">
+          <span class="user-role-badge" style="background:#fee2e2; color:#b91c1c; padding:3px 8px; border-radius:9999px;">⏰ Orologio</span>
+          <h2 id="vtmTaskTitle" style="font-size: 20px; font-weight: 800; margin-top: 6px;">Compito</h2>
+          <p id="vtmEventSub" style="font-size: 13px; color: var(--text-muted);"></p>
+        </div>
+        <button class="modal-close-btn" id="vtmCloseBtn">✕</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; align-items: center; padding: 10px 24px 24px 24px;">
+        <!-- Orologio Visivo Grande (identico all'immagine reale) -->
+        <div id="vtmClockHolder" class="pomodoro-clock-holder" style="margin: 10px 0;"></div>
+
+        <!-- Lettura Digitale Tempo Consumato -->
+        <div id="vtmDigitalDisplay" class="vtm-digital-display" style="font-size: 28px; font-weight: 800; margin-top: 6px; letter-spacing: -0.5px;">
+          00:00
+        </div>
+        <div id="vtmComparisonBadge" style="margin-top: 6px; font-size: 13px; font-weight: 700;"></div>
+
+        <!-- Selettore / Regolatore Tempo Conto alla Rovescia -->
+        <div class="countdown-adjust-row" style="display: flex; align-items: center; gap: 6px; margin: 12px 0 6px 0; background: var(--border-subtle); padding: 5px 12px; border-radius: var(--radius-full); border: 1px solid var(--border-color);">
+          <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Target:</span>
+          <button type="button" class="btn-ghost btn-sm btn-adjust-target" data-add="-5" title="Togli 5 minuti">-5m</button>
+          <button type="button" class="btn-ghost btn-sm btn-adjust-target" data-add="5" title="Aggiungi 5 minuti">+5m</button>
+          <div style="height: 14px; width: 1px; background: #cbd5e1; margin: 0 2px;"></div>
+          <button type="button" class="btn-preset-min" data-min="15">15m</button>
+          <button type="button" class="btn-preset-min" data-min="25">25m</button>
+          <button type="button" class="btn-preset-min" data-min="30">30m</button>
+          <button type="button" class="btn-preset-min" data-min="45">45m</button>
+        </div>
+
+        <p class="text-muted" style="font-size: 12px; margin-top: 6px; text-align: center; max-width: 330px;">
+          Conto alla rovescia: lo spicchio rosso mostra il tempo rimanente e si ritrae verso lo zero!
+        </p>
+
+        <!-- Grandi Pulsanti Tattili di Controllo -->
+        <div class="pomodoro-controls-row" style="display: flex; gap: 14px; margin-top: 18px; width: 100%; justify-content: center;">
+          <button id="vtmBtnPlay" class="btn-primary" style="padding: 12px 28px; font-size: 15px; border-radius: 9999px;">
+            ▶️ Avvia Orologio
+          </button>
+          <button id="vtmBtnPause" class="btn-secondary hidden" style="padding: 12px 28px; font-size: 15px; border-radius: 9999px;">
+            ⏸️ Pausa
+          </button>
+          <button id="vtmBtnStop" class="btn-primary" style="background:#10b981; padding: 12px 24px; font-size: 15px; border-radius: 9999px;">
+            ⏹️ Ho Finito! Salva Tempo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODALE 6: AGGIUNGI MATERIA (SOLO DASHBOARD GENITORE) ==================== -->
+  <div id="subjectModal" class="modal-backdrop hidden" onclick="if(event.target === this) window.closeSubjectModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="subjectModalTitle">Aggiungi Materia</h2>
+        <button type="button" class="modal-close-btn" data-close-modal="subjectModal" onclick="window.closeSubjectModal()">✕</button>
+      </div>
+      <form id="subjectForm" class="modal-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="subjectNameInput">Nome Materia *</label>
+            <input type="text" id="subjectNameInput" class="form-control" placeholder="es. Matematica, Italiano, Scienze, Storia..." list="subjectSuggestionsList" required />
+            <datalist id="subjectSuggestionsList">
+              <option value="Matematica"></option>
+              <option value="Italiano"></option>
+              <option value="Inglese"></option>
+              <option value="Scienze"></option>
+              <option value="Storia"></option>
+              <option value="Geografia"></option>
+              <option value="Arte"></option>
+              <option value="Musica"></option>
+              <option value="Tecnologia"></option>
+              <option value="Scienze Motorie"></option>
+              <option value="Studio Guidato"></option>
+            </datalist>
+          </div>
+
+          <div class="form-group">
+            <label for="subjectDaySelect">📅 Giorno della Settimana *</label>
+            <select id="subjectDaySelect" class="form-select" required>
+              <option value="1">Lunedì</option>
+              <option value="2">Martedì</option>
+              <option value="3">Mercoledì</option>
+              <option value="4">Giovedì</option>
+              <option value="5">Venerdì</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="subjectStartTimeInput">🕒 Ora Inizio *</label>
+              <input type="time" id="subjectStartTimeInput" class="form-control" value="08:00" required />
+            </div>
+            <div class="form-group col">
+              <label for="subjectEndTimeInput">🕒 Ora Fine *</label>
+              <input type="time" id="subjectEndTimeInput" class="form-control" value="09:00" required />
+            </div>
+          </div>
+
+          <!-- Spunta Cadenza Settimanale -->
+          <div class="form-group recurrence-card-box" style="background: var(--border-subtle); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-top: 6px; margin-bottom: 6px;">
+            <label class="checkbox-container" style="font-weight: 700; margin: 0; cursor: pointer;">
+              <input type="checkbox" id="subjectRecurringCheck" checked />
+              <span class="checkmark"></span>
+              🔁 Ripeti ogni settimana (cadenza settimanale)
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-close-modal="subjectModal" onclick="window.closeSubjectModal()">Annulla</button>
+          <button type="submit" class="btn-primary" id="btnSaveSubject">Salva Materia</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notifiche -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/js/api.js?v=4.1"></script>
+  <script src="/js/timer.js?v=4.1"></script>
+  <script src="/js/calendar.js?v=4.1"></script>
+  <script src="/js/stats.js?v=4.1"></script>
+  <script src="/js/app.js?v=4.1"></script>
+  <script>
+    // Gestione universale e immediata apertura/chiusura modale Aggiungi Materia
+    window.openSubjectModal = function() {
+      var m = document.getElementById("subjectModal");
+      if (!m) return;
+      m.classList.remove("hidden");
+      m.style.display = "flex";
+
+      var nameInput = document.getElementById("subjectNameInput");
+      if (nameInput) {
+        nameInput.value = "";
+        setTimeout(function() { nameInput.focus(); }, 80);
+      }
+      var daySelect = document.getElementById("subjectDaySelect");
+      if (daySelect) {
+        var curDow = (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || new Date().getDay();
+        if (curDow < 1 || curDow > 5) curDow = 1;
+        daySelect.value = String(curDow);
+      }
+      var startInput = document.getElementById("subjectStartTimeInput");
+      if (startInput) startInput.value = "08:00";
+      var endInput = document.getElementById("subjectEndTimeInput");
+      if (endInput) endInput.value = "09:00";
+      var recCheck = document.getElementById("subjectRecurringCheck");
+      if (recCheck) recCheck.checked = true;
+    };
+
+    window.closeSubjectModal = function() {
+      var m = document.getElementById("subjectModal");
+      if (m) {
+        m.classList.add("hidden");
+        m.style.display = "none";
+      }
+    };
+  </script>
+</body>
+</html>
