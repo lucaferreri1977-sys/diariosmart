@@ -14,7 +14,35 @@ const App = {
       this.showLoginScreen();
     };
     this.bindGlobalEvents();
+
+    // Sincronizzazione Realtime Firebase: aggiorna automaticamente la schermata senza refresh
+    if (window.FirebaseService) {
+      window.FirebaseService.setupRealtimeListeners((changeType) => {
+        this.onRealtimeDataChange(changeType);
+      });
+    }
+
     await this.checkAuth();
+  },
+
+  _realtimeDebounce: null,
+  onRealtimeDataChange(changeType) {
+    if (this._realtimeDebounce) clearTimeout(this._realtimeDebounce);
+    this._realtimeDebounce = setTimeout(async () => {
+      // 1. Se siamo nella Dashboard Genitore, aggiorna il monitor e le statistiche
+      if (this.currentUser?.role === "parent" && window.StatsDashboard && typeof window.StatsDashboard.refresh === "function") {
+        await window.StatsDashboard.refresh();
+      }
+
+      // 2. Se siamo nel diario o visione settimanale, aggiorna il calendario
+      if (window.Calendar) {
+        if (window.Calendar.currentView === "week") {
+          await window.Calendar.renderWeekView();
+        } else {
+          await window.Calendar.renderDailySchedule();
+        }
+      }
+    }, 120);
   },
 
   bindGlobalEvents() {

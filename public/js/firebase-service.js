@@ -6,6 +6,8 @@ const FirebaseService = {
   db: null,
   isReady: false,
   _initPromise: null,
+  _listenersAttached: false,
+  _listenersCallback: null,
 
   config: {
     apiKey: "AIzaSyBoWfyfpNiR5eRLsNZruPBzfcCc83SGx-E",
@@ -47,6 +49,11 @@ const FirebaseService = {
 
         // Auto-seed iniziale se database vuoto
         await this.ensureInitialSeed();
+
+        // Avvia i listener realtime se registrati
+        if (this._listenersCallback && !this._listenersAttached) {
+          this.setupRealtimeListeners(this._listenersCallback);
+        }
         return true;
       } catch (err) {
         console.error("Errore inizializzazione Firebase:", err);
@@ -54,6 +61,38 @@ const FirebaseService = {
       }
     })();
     return this._initPromise;
+  },
+
+  setupRealtimeListeners(callback) {
+    if (callback) this._listenersCallback = callback;
+    if (!this.db || this._listenersAttached) return;
+    this._listenersAttached = true;
+
+    try {
+      // 1. Ascolta in tempo reale modifiche all'orario scolastico
+      this.db.collection("timetable_slots").onSnapshot(
+        snapshot => {
+          console.log("⚡ Realtime sync: timetable_slots aggiornato");
+          if (typeof this._listenersCallback === "function") {
+            this._listenersCallback("timetable_slots");
+          }
+        },
+        err => console.warn("Errore listener realtime timetable_slots:", err)
+      );
+
+      // 2. Ascolta in tempo reale modifiche ai compiti
+      this.db.collection("todo_items").onSnapshot(
+        snapshot => {
+          console.log("⚡ Realtime sync: todo_items aggiornato");
+          if (typeof this._listenersCallback === "function") {
+            this._listenersCallback("todo_items");
+          }
+        },
+        err => console.warn("Errore listener realtime todo_items:", err)
+      );
+    } catch (e) {
+      console.warn("Impossibile agganciare i listener realtime di Firestore:", e);
+    }
   },
 
   async ensureInitialSeed() {

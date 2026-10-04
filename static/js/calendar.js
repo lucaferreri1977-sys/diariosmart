@@ -69,7 +69,11 @@ const Calendar = {
       const title = titleInput?.value.trim();
       const estMin = parseInt(estSelect?.value || 25);
       const dateStr = this.formatDateIso(this.currentDate);
-      const eventId = this.selectedSubjectEventId || 0;
+      let eventId = this.selectedSubjectEventId;
+      if (!eventId && this._lastSchedule?.subjects?.length > 0) {
+        eventId = this._lastSchedule.subjects[0].event_id;
+        this.selectedSubjectEventId = eventId;
+      }
 
       if (!title) return;
 
@@ -77,7 +81,7 @@ const Calendar = {
       titleInput.disabled = true;
 
       try {
-        await API.quickCreateTask(eventId, title, estMin, dateStr);
+        await API.quickCreateTask(eventId || 0, title, estMin, dateStr);
         if (typeof window.App?.showToast === "function") {
           window.App.showToast("Compito aggiunto con successo!", "📝");
         }
@@ -558,10 +562,11 @@ const Calendar = {
         titleEl.textContent = `${sched.day_name} ${this.formatDateReadable(this.currentDate)}`;
       }
 
+      this._lastSchedule = sched;
       // Seleziona la prima materia del giorno se non c'è una materia valida già selezionata
       const subjects = sched.subjects || [];
       if (subjects.length > 0) {
-        const stillValid = subjects.some(s => s.event_id === this.selectedSubjectEventId);
+        const stillValid = subjects.some(s => String(s.event_id) === String(this.selectedSubjectEventId));
         if (!stillValid) {
           this.selectedSubjectEventId = subjects[0].event_id;
         }
@@ -570,7 +575,7 @@ const Calendar = {
       }
 
       // 1. Aggiorna Banner KPI / Strip per la materia attiva (o per la giornata se nessuna materia)
-      const currentSub = subjects.find(s => s.event_id === this.selectedSubjectEventId);
+      const currentSub = subjects.find(s => String(s.event_id) === String(this.selectedSubjectEventId)) || subjects[0];
       const stats = currentSub ? (currentSub.stats || {}) : (sched.totals || {});
       const totTasks = stats.total_tasks || 0;
       const doneTasks = stats.completed_tasks || 0;
@@ -739,13 +744,16 @@ const Calendar = {
       return;
     }
 
-    const currentSub = subjects.find(s => s.event_id === this.selectedSubjectEventId) || subjects[0];
+    const currentSub = subjects.find(s => String(s.event_id) === String(this.selectedSubjectEventId)) || subjects[0];
     if (titleEl && currentSub) {
       titleEl.innerHTML = `📝 Compiti di <span style="color:${currentSub.category_color || 'var(--primary)'}; font-weight:800;">${currentSub.category_icon || '📚'} ${currentSub.subject_name}</span>`;
     }
 
-    // Filtra esclusivamente i to-do di questa materia
-    let items = (sched.unified_todos || []).filter(i => i.event_id === currentSub.event_id);
+    // Filtra esclusivamente i to-do di questa materia per ID o nome materia
+    let items = (sched.unified_todos || []).filter(i => 
+      String(i.event_id) === String(currentSub.event_id) ||
+      (i.subject_name && currentSub.subject_name && i.subject_name.toLowerCase().trim() === currentSub.subject_name.toLowerCase().trim())
+    );
 
     if (items.length === 0) {
       container.innerHTML = `
