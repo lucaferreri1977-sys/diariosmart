@@ -3088,7 +3088,7 @@ body.app-body {
   margin-top: 18px;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 992px) and (orientation: portrait) {
   .daily-two-col-layout {
     grid-template-columns: 1fr;
   }
@@ -4294,5 +4294,126 @@ body.app-body {
   }
 }
 
+/* ==================== SMARTPHONE E TABLET IN ORIZZONTALE (LANDSCAPE) ==================== */
+@media (orientation: landscape) and (min-width: 560px) {
+  .top-nav {
+    height: 52px !important;
+    min-height: 52px !important;
+    padding: 6px 14px !important;
+    flex-wrap: nowrap !important;
+  }
 
+  .nav-center {
+    order: 2 !important;
+    width: auto !important;
+    flex: 1 1 auto !important;
+    margin: 0 10px !important;
+  }
 
+  .view-switcher {
+    max-width: 380px !important;
+    height: 36px !important;
+  }
+
+  .view-btn {
+    height: 30px !important;
+    font-size: 12px !important;
+  }
+
+  .nav-right {
+    order: 3 !important;
+  }
+
+  .daily-planner-container {
+    padding: 6px 8px !important;
+    gap: 10px !important;
+  }
+
+  .daily-nav-bar {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 8px 14px !important;
+  }
+
+  .daily-date-header {
+    width: auto !important;
+  }
+
+  .daily-week-strip {
+    width: auto !important;
+    max-width: 60% !important;
+  }
+
+  /* 2 COLONNE AFFIANCATE COME DA DESKTOP: MATERIE A SINISTRA, TODO A DESTRA */
+  .daily-two-col-layout {
+    display: grid !important;
+    grid-template-columns: minmax(260px, 320px) 1fr !important;
+    gap: 16px !important;
+    align-items: start !important;
+    margin-top: 10px !important;
+  }
+
+  .daily-events-col {
+    padding: 14px 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .daily-todos-col {
+    padding: 14px 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .todos-header-top {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+  }
+
+  .todos-header-kpis {
+    width: auto !important;
+    justify-content: flex-end !important;
+  }
+
+  .quick-task-fields {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+  }
+
+  .quick-title-input {
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+  }
+
+  .quick-est-select {
+    flex: 0 0 85px !important;
+    width: 85px !important;
+  }
+
+  .quick-add-btn {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    padding: 0 12px !important;
+  }
+
+  .daily-todo-item-row {
+    padding: 10px 12px !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+  }
+
+  .todo-item-left {
+    width: auto !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .todo-item-right {
+    width: auto !important;
+    flex: 0 0 auto !important;
+  }
+}
