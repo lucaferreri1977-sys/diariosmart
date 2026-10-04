@@ -82,6 +82,22 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
             
         return super().do_GET()
 
+    def resolve_target_child_id(self, user: dict, req_user_id=None) -> int:
+        if user.get("role") == "child":
+            return user["id"]
+        if req_user_id is not None and str(req_user_id).strip() != "":
+            try:
+                return int(req_user_id)
+            except (ValueError, TypeError):
+                pass
+        child_u = database.get_user_by_username("giulio")
+        if not child_u:
+            users = database.get_all_users()
+            children = [u for u in users if u.get("role") == "child"]
+            if children:
+                return children[0]["id"]
+        return child_u["id"] if child_u else user["id"]
+
     def handle_api_get(self, path: str, query: dict):
         user = self.get_current_user()
 
@@ -134,7 +150,9 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
                 child_id = user["id"]
             else:
                 req_child_id = query.get("child_id", [None])[0]
-                child_id = int(req_child_id) if req_child_id else None
+                child_u = database.get_user_by_username("giulio")
+                default_target = child_u["id"] if child_u else None
+                child_id = int(req_child_id) if req_child_id else default_target
                 
             start_date = query.get("start_date", [None])[0]
             end_date = query.get("end_date", [None])[0]
@@ -144,10 +162,7 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         # Orario Scolastico Settimanale: GET /api/timetable
         if path == "/api/timetable":
             req_user_id = query.get("user_id", [None])[0]
-            if user["role"] == "child":
-                target_user_id = user["id"]
-            else:
-                target_user_id = int(req_user_id) if req_user_id else user["id"]
+            target_user_id = self.resolve_target_child_id(user, req_user_id)
             tt = database.get_timetable(target_user_id)
             return self.send_json(200, {"ok": True, "timetable": tt})
 
@@ -155,10 +170,7 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/daily-schedule":
             date_str = query.get("date", [datetime.date.today().isoformat()])[0]
             req_user_id = query.get("user_id", [None])[0]
-            if user["role"] == "child":
-                target_user_id = user["id"]
-            else:
-                target_user_id = int(req_user_id) if req_user_id else user["id"]
+            target_user_id = self.resolve_target_child_id(user, req_user_id)
             sched = database.get_daily_schedule(target_user_id, date_str)
             return self.send_json(200, {"ok": True, "schedule": sched})
 
@@ -166,10 +178,7 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/weekly-schedule":
             start_date = query.get("start_date", [datetime.date.today().isoformat()])[0]
             req_user_id = query.get("user_id", [None])[0]
-            if user["role"] == "child":
-                target_user_id = user["id"]
-            else:
-                target_user_id = int(req_user_id) if req_user_id else user["id"]
+            target_user_id = self.resolve_target_child_id(user, req_user_id)
             week_data = database.get_weekly_schedule(target_user_id, start_date)
             return self.send_json(200, {"ok": True, "week": week_data})
 
@@ -295,8 +304,7 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
             if user["role"] != "parent":
                 return self.send_json(403, {"ok": False, "error": "Solo il genitore può aggiungere o modificare materie"})
 
-            child_u = database.get_user_by_username("giulio")
-            target_user_id = child_u["id"] if child_u else user["id"]
+            target_user_id = self.resolve_target_child_id(user, body.get("user_id"))
             
             slots = body.get("slots")
             if slots is not None and isinstance(slots, list):
@@ -324,7 +332,7 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
             if not title:
                 return self.send_json(400, {"ok": False, "error": "Il titolo del compito è obbligatorio"})
             est_min = int(body.get("estimated_minutes", 0))
-            target_user_id = user["id"] if user else 1
+            target_user_id = self.resolve_target_child_id(user, body.get("user_id"))
 
             if not event_id and date_str:
                 sched = database.get_daily_schedule(target_user_id, date_str)
