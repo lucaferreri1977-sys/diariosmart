@@ -1,6 +1,7 @@
 :root {
   --primary: #4f46e5;
   --primary-hover: #4338ca;
+  --primary-dark: #3730a3;
   --primary-light: #eef2ff;
   --success: #10b981;
   --success-light: #ecfdf5;
@@ -2822,12 +2823,15 @@ body.app-body {
 }
 
 #btnParentAddSubject:hover {
-  background: var(--primary-dark);
+  background: #3730a3 !important;
+  color: #ffffff !important;
   box-shadow: 0 4px 10px rgba(79, 70, 229, 0.35);
   transform: translateY(-1px);
 }
 
 #btnParentAddSubject:active {
+  background: #312e81 !important;
+  color: #ffffff !important;
   transform: translateY(0);
 }
 
