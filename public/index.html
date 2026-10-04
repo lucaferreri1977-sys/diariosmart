@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DiarioSmart - Diario & Calendario Scolastico</title>
-  <link rel="stylesheet" href="/css/style.css?v=4.1">
+  <link rel="stylesheet" href="/css/style.css?v=4.2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -207,6 +207,9 @@
                 <div class="quick-task-fields">
                   <input type="text" id="quickTaskTitleInput" class="form-control quick-title-input" placeholder="✏️ Aggiungi un compito o esercizio da fare..." required />
                   <select id="quickTaskEstSelect" class="form-select quick-est-select" title="Tempo stimato">
+                    <option value="1">⏱️ 1m</option>
+                    <option value="5">⏱️ 5m</option>
+                    <option value="10">⏱️ 10m</option>
                     <option value="15">⏱️ 15m</option>
                     <option value="20">⏱️ 20m</option>
                     <option value="25" selected>⏱️ 25m</option>
@@ -539,17 +542,6 @@
         </div>
         <div id="vtmComparisonBadge" style="margin-top: 6px; font-size: 13px; font-weight: 700;"></div>
 
-        <!-- Selettore / Regolatore Tempo Conto alla Rovescia -->
-        <div class="countdown-adjust-row" style="display: flex; align-items: center; gap: 6px; margin: 12px 0 6px 0; background: var(--border-subtle); padding: 5px 12px; border-radius: var(--radius-full); border: 1px solid var(--border-color);">
-          <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Target:</span>
-          <button type="button" class="btn-ghost btn-sm btn-adjust-target" data-add="-5" title="Togli 5 minuti">-5m</button>
-          <button type="button" class="btn-ghost btn-sm btn-adjust-target" data-add="5" title="Aggiungi 5 minuti">+5m</button>
-          <div style="height: 14px; width: 1px; background: #cbd5e1; margin: 0 2px;"></div>
-          <button type="button" class="btn-preset-min" data-min="15">15m</button>
-          <button type="button" class="btn-preset-min" data-min="25">25m</button>
-          <button type="button" class="btn-preset-min" data-min="30">30m</button>
-          <button type="button" class="btn-preset-min" data-min="45">45m</button>
-        </div>
 
         <p class="text-muted" style="font-size: 12px; margin-top: 6px; text-align: center; max-width: 330px;">
           Conto alla rovescia: lo spicchio rosso mostra il tempo rimanente e si ritrae verso lo zero!
@@ -642,11 +634,11 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=4.1"></script>
-  <script src="/js/timer.js?v=4.1"></script>
-  <script src="/js/calendar.js?v=4.1"></script>
-  <script src="/js/stats.js?v=4.1"></script>
-  <script src="/js/app.js?v=4.1"></script>
+  <script src="/js/api.js?v=4.2"></script>
+  <script src="/js/timer.js?v=4.2"></script>
+  <script src="/js/calendar.js?v=4.2"></script>
+  <script src="/js/stats.js?v=4.2"></script>
+  <script src="/js/app.js?v=4.2"></script>
   <script>
     // Gestione universale e immediata apertura/chiusura modale Aggiungi Materia
     window.openSubjectModal = function() {

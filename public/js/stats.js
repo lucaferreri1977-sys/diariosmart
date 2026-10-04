@@ -236,6 +236,9 @@ const StatsDashboard = {
       quickAdd.innerHTML = `
         <input type="text" class="parent-quick-input" placeholder="✏️ Assegna compito a Giulio..." />
         <select class="parent-quick-est" title="Tempo stimato">
+          <option value="1">1 min</option>
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
           <option value="15">15 min</option>
           <option value="20">20 min</option>
           <option value="25" selected>25 min</option>
