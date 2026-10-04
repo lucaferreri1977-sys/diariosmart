@@ -14,17 +14,6 @@ const Calendar = {
     if (this._initialized) return;
     this._initialized = true;
 
-    // Se oggi è Sabato o Domenica, posiziona di default il diario scolastico su Lunedì (prossimo giorno di scuola)
-    const today = new Date();
-    const dow = today.getDay();
-    if (dow === 0) { // Domenica
-      this.currentDate = new Date(today);
-      this.currentDate.setDate(today.getDate() + 1);
-    } else if (dow === 6) { // Sabato
-      this.currentDate = new Date(today);
-      this.currentDate.setDate(today.getDate() + 2);
-    }
-
     this.bindEvents();
     this.updateTitle();
   },
@@ -44,9 +33,6 @@ const Calendar = {
     document.getElementById("btnWeekNext")?.addEventListener("click", () => this.navigate(1));
     document.getElementById("btnWeekToday")?.addEventListener("click", () => {
       this.currentDate = new Date();
-      const dow = this.currentDate.getDay();
-      if (dow === 0) this.currentDate.setDate(this.currentDate.getDate() + 1);
-      else if (dow === 6) this.currentDate.setDate(this.currentDate.getDate() + 2);
       this.refresh();
     });
 
