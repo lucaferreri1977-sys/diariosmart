@@ -245,31 +245,56 @@ def update_user(user_id: int, display_name: Optional[str] = None, avatar_emoji: 
         return cursor.rowcount > 0
 
 def create_session(user_id: int) -> str:
-    token = auth.generate_session_token()
+    user = get_user_by_id(user_id)
+    username = user["username"] if user else ""
+    role = user["role"] if user else "child"
+    token = auth.create_signed_token(user_id, username, role)
     expiry = auth.calculate_session_expiry()
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)", (token, user_id, expiry))
-        conn.commit()
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)", (token, user_id, expiry))
+            conn.commit()
+    except Exception:
+        pass
     return token
 
 def get_user_from_session(token: str) -> Optional[sqlite3.Row]:
     if not token:
         return None
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT u.id, u.username, u.role, u.display_name, u.avatar_emoji
-            FROM sessions s
-            JOIN users u ON s.user_id = u.id
-            WHERE s.token = ? AND datetime(s.expires_at) > datetime('now')
-        """, (token,))
-        return cursor.fetchone()
+
+    # 1. Verifica token stateless firmato (valido e verificato su qualsiasi worker serverless)
+    payload = auth.verify_signed_token(token)
+    if payload and "uid" in payload:
+        user = get_user_by_id(payload["uid"])
+        if user:
+            return user
+        if "usr" in payload:
+            user = get_user_by_username(payload["usr"])
+            if user:
+                return user
+
+    # 2. Fallback su tabella sessions (per token legacy generati in precedenza)
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT u.id, u.username, u.role, u.display_name, u.avatar_emoji
+                FROM sessions s
+                JOIN users u ON s.user_id = u.id
+                WHERE s.token = ? AND datetime(s.expires_at) > datetime('now')
+            """, (token,))
+            return cursor.fetchone()
+    except Exception:
+        return None
 
 def delete_session(token: str):
-    with get_connection() as conn:
-        conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
-        conn.commit()
+    try:
+        with get_connection() as conn:
+            conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
+            conn.commit()
+    except Exception:
+        pass
 
 # --- Funzioni Categorie ---
 

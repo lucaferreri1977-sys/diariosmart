@@ -20,14 +20,16 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
         # Log pulito delle richieste
         print(f"[{self.log_date_time_string()}] {self.command} {self.path} - {args[0] if args else ''}")
 
-    def send_json(self, status_code: int, data: dict):
+    def send_json(self, status_code: int, data: dict, set_cookie: str = None):
         response_bytes = json.dumps(data, ensure_ascii=False).encode("utf-8")
         self.send_response(status_code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(response_bytes)))
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Authorization, X-Session-Token")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
+        if set_cookie:
+            self.send_header("Set-Cookie", set_cookie)
         self.end_headers()
         self.wfile.write(response_bytes)
 
@@ -43,21 +45,48 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
 
     def get_current_user(self):
         token = None
-        auth_header = self.headers.get("Authorization")
-        if auth_header and auth_header.startswith("Bearer "):
-            token = auth_header.split(" ")[1]
-        
+
+        # 1. Header Authorization
+        auth_header = self.headers.get("Authorization") or self.headers.get("authorization")
+        if auth_header:
+            if auth_header.startswith("Bearer "):
+                token = auth_header.split(" ", 1)[1].strip()
+            else:
+                token = auth_header.strip()
+
+        # 2. Header X-Authorization / X-Session-Token (se Vercel rimuove Authorization)
         if not token:
-            cookie_header = self.headers.get("Cookie")
+            x_auth = self.headers.get("X-Authorization") or self.headers.get("x-authorization")
+            if x_auth:
+                if x_auth.startswith("Bearer "):
+                    token = x_auth.split(" ", 1)[1].strip()
+                else:
+                    token = x_auth.strip()
+
+        if not token:
+            x_tok = self.headers.get("X-Session-Token") or self.headers.get("x-session-token")
+            if x_tok:
+                token = x_tok.strip()
+
+        # 3. Cookie calendar_session
+        if not token:
+            cookie_header = self.headers.get("Cookie") or self.headers.get("cookie")
             if cookie_header:
                 for cookie in cookie_header.split(";"):
                     cookie = cookie.strip()
                     if cookie.startswith("calendar_session="):
-                        token = cookie.split("=")[1]
+                        token = cookie.split("=")[1].strip()
                         break
+
+        # 4. Fallback su query param (?auth_token=... o ?token=...)
+        if not token and hasattr(self, "path") and "?" in self.path:
+            parsed = urllib.parse.urlparse(self.path)
+            q = urllib.parse.parse_qs(parsed.query)
+            token = q.get("auth_token", [None])[0] or q.get("token", [None])[0]
 
         if not token:
             return None
+
         user = database.get_user_from_session(token)
         return dict(user) if user else None
 
@@ -237,7 +266,8 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
                 "display_name": u_row["display_name"],
                 "avatar_emoji": u_row["avatar_emoji"]
             }
-            return self.send_json(200, {"ok": True, "token": token, "user": user_data})
+            cookie_val = f"calendar_session={token}; Path=/; Max-Age=2592000; SameSite=Lax"
+            return self.send_json(200, {"ok": True, "token": token, "user": user_data}, set_cookie=cookie_val)
 
         # Autenticazione richiesta per tutto il resto
         user = self.get_current_user()

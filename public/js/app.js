@@ -9,7 +9,10 @@ const App = {
   currentEventDetail: null,
 
   async init() {
-    window.onUnauthorized = () => this.showLoginScreen();
+    window.onUnauthorized = () => {
+      if (this._isLoggingIn) return;
+      this.showLoginScreen();
+    };
     this.bindGlobalEvents();
     await this.checkAuth();
   },
@@ -1297,7 +1300,10 @@ const App = {
 
 // Hook globale per errori 401
 window.onUnauthorized = () => {
-  App.openLoginModal();
+  if (window.App && window.App._isLoggingIn) return;
+  if (window.App && typeof window.App.showLoginScreen === "function") {
+    window.App.showLoginScreen();
+  }
 };
 
 // Funzioni globali di aggancio

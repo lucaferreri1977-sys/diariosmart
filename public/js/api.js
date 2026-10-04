@@ -13,8 +13,9 @@ const API = {
   setSession(token, user) {
     localStorage.setItem(this.TOKEN_KEY, token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-    // Imposta anche un cookie per comodità
-    document.cookie = `calendar_session=${token}; path=/; max-age=604800; SameSite=Lax`;
+    // Imposta anche un cookie per massima affidabilità (compatibile HTTPS/Vercel)
+    const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `calendar_session=${token}; path=/; max-age=2592000; SameSite=Lax${secureFlag}`;
   },
 
   clearSession() {
@@ -41,6 +42,8 @@ const API = {
     const token = this.getToken();
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
+      headers["X-Authorization"] = `Bearer ${token}`;
+      headers["X-Session-Token"] = token;
     }
 
     const config = {
