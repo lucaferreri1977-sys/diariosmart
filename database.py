@@ -931,30 +931,13 @@ def get_daily_schedule(user_id: int, date_str: str) -> Dict[str, Any]:
         }
         subjects.append(subject_card)
 
-    # 3. Eventi straordinari (non appartenenti all'orario scolastico base)
-    extra_events = []
-    for ev in existing_events:
-        if ev["id"] not in matched_event_ids:
-            ev_det = get_event_details(ev["id"])
-            if ev_det:
-                extra_events.append(ev_det)
-
-    # 4. Totali generali per la giornata
+    # 3. Totali generali per la giornata (solo materie scolastiche)
     tot_tasks = sum(s["stats"]["total_tasks"] for s in subjects)
     tot_done = sum(s["stats"]["completed_tasks"] for s in subjects)
     tot_est = sum(s["stats"]["estimated_minutes"] for s in subjects)
     tot_act = sum(s["stats"]["actual_minutes"] for s in subjects)
 
-    for ex in extra_events:
-        for l in ex.get("lists", []):
-            for item in l.get("items", []):
-                tot_tasks += 1
-                if item.get("completed"):
-                    tot_done += 1
-                tot_est += int(item.get("estimated_minutes") or 0)
-                tot_act += int(item.get("actual_minutes") or 0)
-
-    # 5. Lista unificata di tutti i to-do della giornata (uno sotto l'altro)
+    # 4. Lista unificata dei compiti per le materie della giornata
     unified_todos = []
     for sub in subjects:
         for l in sub.get("lists", []):
@@ -970,27 +953,13 @@ def get_daily_schedule(user_id: int, date_str: str) -> Dict[str, Any]:
                 item_copy["period_label"] = sub.get("period_label")
                 unified_todos.append(item_copy)
 
-    for ex in extra_events:
-        for l in ex.get("lists", []):
-            for item in l.get("items", []):
-                item_copy = dict(item)
-                item_copy["subject_name"] = ex.get("title")
-                item_copy["category_name"] = ex.get("category_name", "Extra")
-                item_copy["category_color"] = ex.get("category_color", "#8b5cf6")
-                item_copy["category_icon"] = ex.get("category_icon", "🌟")
-                item_copy["event_id"] = ex.get("id")
-                item_copy["start_time"] = ex.get("start_time", "")
-                item_copy["end_time"] = ex.get("end_time", "")
-                item_copy["period_label"] = "Attività"
-                unified_todos.append(item_copy)
-
     return {
         "date": date_str,
         "day_of_week": dow,
         "day_name": day_name,
         "is_weekend": dow in (6, 7),
         "subjects": subjects,
-        "extra_events": extra_events,
+        "extra_events": [],
         "unified_todos": unified_todos,
         "totals": {
             "total_tasks": tot_tasks,

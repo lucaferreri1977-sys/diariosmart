@@ -2,13 +2,17 @@
 Suite di test completa per verificare la logica di FamilyCal:
 Autenticazione, Eventi, To-Do List Multiple, Cronometro e Statistiche.
 """
+import os
 import sys
+import tempfile
 import datetime
 import database
 import auth
 
 def run_tests():
     print("▶️ Inizio test unitari e di integrazione...")
+    test_db = tempfile.mktemp(suffix=".db")
+    database.DB_PATH = test_db
     database.init_db()
 
     # Test 1: Autenticazione
@@ -187,6 +191,11 @@ def run_tests():
     database.delete_timetable_slot(test_slot_id, user_id=c_user["id"])
     database.delete_event(ev_id)
     print("🧹 Pulizia dati di test completata.")
+    if os.path.exists(test_db):
+        try:
+            os.remove(test_db)
+        except Exception:
+            pass
     print("🎉 TUTTI I TEST SONO PASSATI CON SUCCESSO!")
 
 if __name__ == "__main__":

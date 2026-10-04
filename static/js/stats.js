@@ -6,6 +6,9 @@ const StatsDashboard = {
   selectedDayOfWeek: null,
 
   init() {
+    if (this._initialized) return;
+    this._initialized = true;
+
     const periodSelect = document.getElementById("statsPeriodSelect");
     periodSelect?.addEventListener("change", () => this.refresh());
 
@@ -113,25 +116,7 @@ const StatsDashboard = {
     if (!container) return;
     container.innerHTML = "";
 
-    const subjects = [
-      ...(sched.subjects || []).map(s => ({ ...s, is_timetable: true })),
-      ...(sched.extra_events || []).map(e => ({
-        event_id: e.id,
-        slot_id: null,
-        period_number: 99,
-        period_label: 'Attività',
-        subject_name: e.title,
-        category_id: e.category_id,
-        category_name: e.category_name || 'Materia',
-        category_color: e.category_color || '#8b5cf6',
-        category_icon: e.category_icon || '📘',
-        start_time: e.start_time || '15:00',
-        end_time: e.end_time || '16:00',
-        stats: e.stats || { total_tasks: 0, completed_tasks: 0, actual_minutes: 0, estimated_minutes: 0 },
-        lists: e.lists || [],
-        is_timetable: false
-      }))
-    ];
+    const subjects = (sched.subjects || []).map(s => ({ ...s, is_timetable: true }));
     if (subjects.length === 0) {
       container.innerHTML = `
         <div style="grid-column: 1 / -1; padding: 28px 16px; text-align: center; background: #f8fafc; border-radius: 14px; border: 1px dashed var(--border-color);">
