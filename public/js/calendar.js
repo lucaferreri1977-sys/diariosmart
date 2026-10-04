@@ -59,6 +59,17 @@ const Calendar = {
       this.refresh();
     });
 
+    // Pulsante Reset Filtro per tornare alla visione di tutti i todo del giorno
+    document.getElementById("btnResetTodosFilter")?.addEventListener("click", () => {
+      this.selectedSubjectEventId = null;
+      if (this._lastSchedule) {
+        this.renderDailyEventsColumn(this._lastSchedule);
+        this.updateQuickTaskPlaceholder(this._lastSchedule);
+        this.renderDailyTodosColumn(this._lastSchedule);
+        this.updateDailyKpis(this._lastSchedule);
+      }
+    });
+
     // Form aggiunta to-do rapido nella colonna destra
     const quickForm = document.getElementById("dailyQuickTaskForm");
     quickForm?.addEventListener("submit", async (e) => {
@@ -72,7 +83,6 @@ const Calendar = {
       let eventId = this.selectedSubjectEventId;
       if (!eventId && this._lastSchedule?.subjects?.length > 0) {
         eventId = this._lastSchedule.subjects[0].event_id;
-        this.selectedSubjectEventId = eventId;
       }
 
       if (!title) return;
@@ -578,50 +588,53 @@ const Calendar = {
       }
 
       this._lastSchedule = sched;
-      // Seleziona la prima materia del giorno se non c'è una materia valida già selezionata
       const subjects = sched.subjects || [];
-      if (subjects.length > 0) {
+      // Se era selezionata una materia specifica, verifica che esista ancora
+      if (this.selectedSubjectEventId) {
         const stillValid = subjects.some(s => String(s.event_id) === String(this.selectedSubjectEventId));
         if (!stillValid) {
-          this.selectedSubjectEventId = subjects[0].event_id;
+          this.selectedSubjectEventId = null;
         }
-      } else {
-        this.selectedSubjectEventId = null;
       }
 
-      // 1. Aggiorna Banner KPI / Strip per la materia attiva (o per la giornata se nessuna materia)
-      const currentSub = subjects.find(s => String(s.event_id) === String(this.selectedSubjectEventId)) || subjects[0];
-      const stats = currentSub ? (currentSub.stats || {}) : (sched.totals || {});
-      const totTasks = stats.total_tasks || 0;
-      const doneTasks = stats.completed_tasks || 0;
-      const estMin = stats.estimated_minutes !== undefined ? stats.estimated_minutes : (stats.total_estimated_minutes || 0);
-      const actMin = stats.actual_minutes !== undefined ? stats.actual_minutes : (stats.total_actual_minutes || 0);
-      const pct = totTasks > 0 ? Math.round((doneTasks / totTasks) * 100) : 0;
+      // 1. Aggiorna Banner KPI / Strip per la materia attiva o per la giornata intera
+      this.updateDailyKpis(sched);
 
-      const totalTasksEl = document.getElementById("dailyTotalTasks");
-      const estEl = document.getElementById("dailyEstimatedTime");
-      const actEl = document.getElementById("dailyActualTime");
-      const pctEl = document.getElementById("dailyProgressPercent");
-      const barEl = document.getElementById("dailyProgressBar");
-
-      if (totalTasksEl) totalTasksEl.textContent = `${doneTasks}/${totTasks}`;
-      if (estEl) estEl.textContent = TaskTimer.formatMinutesHuman(estMin);
-      if (actEl) actEl.textContent = TaskTimer.formatMinutesHuman(actMin);
-      if (pctEl) pctEl.textContent = `${pct}%`;
-      if (barEl) barEl.style.width = `${pct}%`;
-
-      // 2. Popola COLONNA SINISTRA: Solo ed esclusivamente le Materie del Giorno
+      // 2. Popola COLONNA SINISTRA: Solo ed esclusivamente le Materie del Giorno + pulsante reset
       this.renderDailyEventsColumn(sched);
 
       // 3. Aggiorna Placeholder del Form Rapido Compito
       this.updateQuickTaskPlaceholder(sched);
 
-      // 4. Popola COLONNA DESTRA: I To-Do per la materia selezionata
+      // 4. Popola COLONNA DESTRA: I To-Do (tutti della giornata o filtrati per la materia selezionata)
       this.renderDailyTodosColumn(sched);
 
     } catch (err) {
       console.error("Errore caricamento daily schedule:", err);
     }
+  },
+
+  updateDailyKpis(sched) {
+    const subjects = sched.subjects || [];
+    const currentSub = this.selectedSubjectEventId ? subjects.find(s => String(s.event_id) === String(this.selectedSubjectEventId)) : null;
+    const stats = currentSub ? (currentSub.stats || {}) : (sched.totals || {});
+    const totTasks = stats.total_tasks || 0;
+    const doneTasks = stats.completed_tasks || 0;
+    const estMin = stats.estimated_minutes !== undefined ? stats.estimated_minutes : (stats.total_estimated_minutes || 0);
+    const actMin = stats.actual_minutes !== undefined ? stats.actual_minutes : (stats.total_actual_minutes || 0);
+    const pct = totTasks > 0 ? Math.round((doneTasks / totTasks) * 100) : 0;
+
+    const totalTasksEl = document.getElementById("dailyTotalTasks");
+    const estEl = document.getElementById("dailyEstimatedTime");
+    const actEl = document.getElementById("dailyActualTime");
+    const pctEl = document.getElementById("dailyProgressPercent");
+    const barEl = document.getElementById("dailyProgressBar");
+
+    if (totalTasksEl) totalTasksEl.textContent = `${doneTasks}/${totTasks}`;
+    if (estEl) estEl.textContent = TaskTimer.formatMinutesHuman(estMin);
+    if (actEl) actEl.textContent = TaskTimer.formatMinutesHuman(actMin);
+    if (pctEl) pctEl.textContent = `${pct}%`;
+    if (barEl) barEl.style.width = `${pct}%`;
   },
 
   renderAgendaView() {
@@ -635,6 +648,26 @@ const Calendar = {
     const container = document.getElementById("dailyEventsList");
     if (!container) return;
     container.innerHTML = "";
+
+    // Aggiorna visibilità e stato del pulsante per tornare a tutti i compiti
+    const resetBtn = document.getElementById("btnResetTodosFilter");
+    if (resetBtn) {
+      if (this.selectedSubjectEventId) {
+        resetBtn.classList.remove("hidden");
+        resetBtn.innerHTML = "✕ Tutti i compiti";
+        resetBtn.title = "Torna alla visione di tutti i compiti del giorno";
+        resetBtn.onclick = (e) => {
+          e.preventDefault();
+          this.selectedSubjectEventId = null;
+          this.renderDailyEventsColumn(sched);
+          this.updateQuickTaskPlaceholder(sched);
+          this.renderDailyTodosColumn(sched);
+          this.updateDailyKpis(sched);
+        };
+      } else {
+        resetBtn.classList.add("hidden");
+      }
+    }
 
     const subjects = sched.subjects || [];
 
@@ -651,7 +684,7 @@ const Calendar = {
 
     subjects.forEach(sub => {
       const card = document.createElement("div");
-      const isSelected = this.selectedSubjectEventId === sub.event_id;
+      const isSelected = String(this.selectedSubjectEventId) === String(sub.event_id);
       card.className = `daily-event-card ${isSelected ? 'selected' : ''}`;
       card.style.borderLeftColor = sub.category_color || "#3b82f6";
       card.style.cursor = "pointer";
@@ -681,28 +714,16 @@ const Calendar = {
       `;
 
       card.addEventListener("click", () => {
-        this.selectedSubjectEventId = sub.event_id;
+        // Toggle: se già selezionata torna alla visione di tutti i compiti del giorno
+        if (String(this.selectedSubjectEventId) === String(sub.event_id)) {
+          this.selectedSubjectEventId = null;
+        } else {
+          this.selectedSubjectEventId = sub.event_id;
+        }
         this.renderDailyEventsColumn(sched);
         this.updateQuickTaskPlaceholder(sched);
         this.renderDailyTodosColumn(sched);
-
-        // Aggiorna KPI per la materia cliccata
-        const sStats = sub.stats || {};
-        const sTot = sStats.total_tasks || 0;
-        const sDone = sStats.completed_tasks || 0;
-        const sEst = sStats.estimated_minutes || 0;
-        const sAct = sStats.actual_minutes || 0;
-        const sPct = sTot > 0 ? Math.round((sDone / sTot) * 100) : 0;
-        const totalTasksEl = document.getElementById("dailyTotalTasks");
-        const estEl = document.getElementById("dailyEstimatedTime");
-        const actEl = document.getElementById("dailyActualTime");
-        const pctEl = document.getElementById("dailyProgressPercent");
-        const barEl = document.getElementById("dailyProgressBar");
-        if (totalTasksEl) totalTasksEl.textContent = `${sDone}/${sTot}`;
-        if (estEl) estEl.textContent = TaskTimer.formatMinutesHuman(sEst);
-        if (actEl) actEl.textContent = TaskTimer.formatMinutesHuman(sAct);
-        if (pctEl) pctEl.textContent = `${sPct}%`;
-        if (barEl) barEl.style.width = `${sPct}%`;
+        this.updateDailyKpis(sched);
       });
 
       container.appendChild(card);
@@ -725,7 +746,7 @@ const Calendar = {
     input.disabled = false;
     if (quickForm) quickForm.style.opacity = "1";
 
-    const currentSub = subjects.find(s => s.event_id === this.selectedSubjectEventId) || subjects[0];
+    const currentSub = this.selectedSubjectEventId ? subjects.find(s => String(s.event_id) === String(this.selectedSubjectEventId)) : null;
     if (currentSub) {
       input.placeholder = `✏️ Aggiungi compito per ${currentSub.subject_name}...`;
     } else {
@@ -734,13 +755,11 @@ const Calendar = {
   },
 
   /**
-   * Rende i to-do della MATERIA SELEZIONATA per la giornata nella COLONNA DESTRA
+   * Rende i to-do della MATERIA SELEZIONATA oppure di TUTTA LA GIORNATA nella COLONNA DESTRA
    */
   renderDailyTodosColumn(sched) {
     const container = document.getElementById("dailyUnifiedTodosList");
     const titleEl = document.getElementById("todosColTitle");
-    const resetBtn = document.getElementById("btnResetTodosFilter");
-    if (resetBtn) resetBtn.classList.add("hidden");
     if (!container) return;
     container.innerHTML = "";
 
@@ -761,28 +780,51 @@ const Calendar = {
       return;
     }
 
-    const currentSub = subjects.find(s => String(s.event_id) === String(this.selectedSubjectEventId)) || subjects[0];
-    if (titleEl && currentSub) {
-      titleEl.innerHTML = `📝 Compiti di <span style="color:${currentSub.category_color || 'var(--primary)'}; font-weight:800;">${currentSub.category_icon || '📚'} ${currentSub.subject_name}</span>`;
-    }
+    let items = [];
+    if (this.selectedSubjectEventId) {
+      // 1. Filtrato per materia selezionata
+      const currentSub = subjects.find(s => String(s.event_id) === String(this.selectedSubjectEventId));
+      if (currentSub) {
+        if (titleEl) {
+          titleEl.innerHTML = `📝 Compiti di <span style="color:${currentSub.category_color || 'var(--primary)'}; font-weight:800;">${currentSub.category_icon || '📚'} ${currentSub.subject_name}</span>`;
+        }
+        items = (sched.unified_todos || []).filter(i => 
+          String(i.event_id) === String(currentSub.event_id) ||
+          (i.subject_name && currentSub.subject_name && i.subject_name.toLowerCase().trim() === currentSub.subject_name.toLowerCase().trim())
+        );
 
-    // Filtra esclusivamente i to-do di questa materia per ID o nome materia
-    let items = (sched.unified_todos || []).filter(i => 
-      String(i.event_id) === String(currentSub.event_id) ||
-      (i.subject_name && currentSub.subject_name && i.subject_name.toLowerCase().trim() === currentSub.subject_name.toLowerCase().trim())
-    );
+        if (items.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 40px 20px; background: #f8fafc; border-radius: 16px; border: 1px dashed var(--border-color);">
+              <span style="font-size: 36px; display: block; margin-bottom: 8px;">📝</span>
+              <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Nessun compito registrato per ${currentSub.subject_name}</h4>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; max-width: 400px; margin-left: auto; margin-right: auto;">
+                Scrivi cosa c'è da fare nel campo in alto e clicca su "+ Aggiungi" per assegnare un compito a questa materia!
+              </p>
+            </div>
+          `;
+          return;
+        }
+      }
+    } else {
+      // 2. Visione di TUTTI i compiti della giornata
+      if (titleEl) {
+        titleEl.textContent = `📝 Tutti i Compiti del Giorno • ${sched.day_name || ''}`;
+      }
+      items = sched.unified_todos || [];
 
-    if (items.length === 0) {
-      container.innerHTML = `
-        <div style="text-align: center; padding: 40px 20px; background: #f8fafc; border-radius: 16px; border: 1px dashed var(--border-color);">
-          <span style="font-size: 36px; display: block; margin-bottom: 8px;">📝</span>
-          <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Nessun compito registrato per ${currentSub.subject_name}</h4>
-          <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; max-width: 400px; margin-left: auto; margin-right: auto;">
-            Scrivi cosa c'è da fare nel campo in alto e clicca su "+ Aggiungi" per assegnare un compito a questa materia!
-          </p>
-        </div>
-      `;
-      return;
+      if (items.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 40px 20px; background: #f8fafc; border-radius: 16px; border: 1px dashed var(--border-color);">
+            <span style="font-size: 36px; display: block; margin-bottom: 8px;">🎉</span>
+            <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Nessun compito registrato per ${sched.day_name || 'questo giorno'}</h4>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px; max-width: 400px; margin-left: auto; margin-right: auto;">
+              Nessun esercizio assegnato per oggi. Puoi aggiungerne uno dal modulo in alto.
+            </p>
+          </div>
+        `;
+        return;
+      }
     }
 
     items.forEach(item => {
