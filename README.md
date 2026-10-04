@@ -19,7 +19,7 @@ Applicazione web moderna e responsive creata su misura per la gestione dello stu
    - Rintocco acustico dolce (*Ding-Dong*) quando il conto alla rovescia tocca lo zero.
    - Tracciamento automatico del tempo effettivo impiegato per ciascun compito.
 
-3. **Orario Scolastico Settimanale Configurabile (Lunedì - Sabato)**:
+3. **Orario Scolastico Settimanale Configurabile (Lunedì - Venerdì)**:
    - Pulsante `⚙️ Orario Settimanale` per personalizzare o modificare la griglia delle materie settimanali.
    - Pre-popolato con un orario scolastico realistico (Matematica, Italiano, Scienze, Inglese, Storia, Arte, Motoria).
 

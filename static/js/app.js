@@ -281,11 +281,11 @@ const App = {
     const nameInput = document.getElementById("subjectNameInput");
     if (nameInput) nameInput.value = "";
     
-    // Preseleziona il giorno attualmente visualizzato nella dashboard o oggi
+    // Preseleziona il giorno attualmente visualizzato nella dashboard o oggi (Lunedì - Venerdì)
     const daySelect = document.getElementById("subjectDaySelect");
     if (daySelect) {
-      const currentDay = (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || 
-                         (new Date().getDay() === 0 ? 1 : new Date().getDay());
+      let currentDay = (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || (new Date().getDay());
+      if (currentDay < 1 || currentDay > 5) currentDay = 1;
       daySelect.value = String(currentDay);
     }
     

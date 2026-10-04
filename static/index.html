@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DiarioSmart - Diario & Calendario Scolastico</title>
-  <link rel="stylesheet" href="/css/style.css?v=4.0">
+  <link rel="stylesheet" href="/css/style.css?v=4.1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -606,7 +606,6 @@
               <option value="3">Mercoledì</option>
               <option value="4">Giovedì</option>
               <option value="5">Venerdì</option>
-              <option value="6">Sabato</option>
             </select>
           </div>
 
@@ -643,11 +642,11 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Scripts -->
-  <script src="/js/api.js?v=4.0"></script>
-  <script src="/js/timer.js?v=4.0"></script>
-  <script src="/js/calendar.js?v=4.0"></script>
-  <script src="/js/stats.js?v=4.0"></script>
-  <script src="/js/app.js?v=4.0"></script>
+  <script src="/js/api.js?v=4.1"></script>
+  <script src="/js/timer.js?v=4.1"></script>
+  <script src="/js/calendar.js?v=4.1"></script>
+  <script src="/js/stats.js?v=4.1"></script>
+  <script src="/js/app.js?v=4.1"></script>
   <script>
     // Gestione universale e immediata apertura/chiusura modale Aggiungi Materia
     window.openSubjectModal = function() {
@@ -663,8 +662,8 @@
       }
       var daySelect = document.getElementById("subjectDaySelect");
       if (daySelect) {
-        var curDow = (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || 
-                     (new Date().getDay() === 0 ? 1 : new Date().getDay());
+        var curDow = (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || new Date().getDay();
+        if (curDow < 1 || curDow > 5) curDow = 1;
         daySelect.value = String(curDow);
       }
       var startInput = document.getElementById("subjectStartTimeInput");

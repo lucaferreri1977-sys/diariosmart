@@ -15,9 +15,9 @@ const StatsDashboard = {
     const refreshBtn = document.getElementById("btnRefreshStats");
     refreshBtn?.addEventListener("click", () => this.refresh());
 
-    if (this.selectedDayOfWeek === null) {
+    if (this.selectedDayOfWeek === null || this.selectedDayOfWeek > 5 || this.selectedDayOfWeek < 1) {
       const dow = new Date().getDay();
-      this.selectedDayOfWeek = dow === 0 ? 1 : dow;
+      this.selectedDayOfWeek = (dow === 0 || dow === 6) ? 1 : dow;
     }
   },
 
@@ -30,9 +30,9 @@ const StatsDashboard = {
     startDateObj.setDate(startDateObj.getDate() - days);
     const startDate = Calendar.formatDateIso(startDateObj);
 
-    if (this.selectedDayOfWeek === null) {
+    if (this.selectedDayOfWeek === null || this.selectedDayOfWeek > 5 || this.selectedDayOfWeek < 1) {
       const dow = today.getDay();
-      this.selectedDayOfWeek = dow === 0 ? 1 : dow;
+      this.selectedDayOfWeek = (dow === 0 || dow === 6) ? 1 : dow;
     }
 
     // Calcola la data corrispondente al giorno selezionato nella settimana corrente
@@ -73,8 +73,7 @@ const StatsDashboard = {
       { dow: 2, name: "Martedì" },
       { dow: 3, name: "Mercoledì" },
       { dow: 4, name: "Giovedì" },
-      { dow: 5, name: "Venerdì" },
-      { dow: 6, name: "Sabato" }
+      { dow: 5, name: "Venerdì" }
     ];
 
     days.forEach(d => {
