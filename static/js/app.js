@@ -360,6 +360,11 @@ const App = {
       return;
     }
 
+    if (dayOfWeek < 1 || dayOfWeek > 5) {
+      alert("Le materie scolastiche possono essere configurate solo da Lunedì a Venerdì (il fine settimana non prevede lezioni).");
+      return;
+    }
+
     const saveBtn = document.getElementById("btnSaveSubject");
     if (saveBtn) {
       saveBtn.disabled = true;

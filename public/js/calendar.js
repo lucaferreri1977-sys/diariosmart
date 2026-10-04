@@ -670,13 +670,14 @@ const Calendar = {
     }
 
     const subjects = sched.subjects || [];
+    const isWeekend = (this.currentDate && (this.currentDate.getDay() === 0 || this.currentDate.getDay() === 6)) || sched.is_weekend || (sched.day_of_week === 6 || sched.day_of_week === 7);
 
     if (subjects.length === 0) {
       container.innerHTML = `
         <div style="text-align: center; padding: 32px 12px; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--border-color);">
-          <span style="font-size: 32px; display: block; margin-bottom: 6px;">🎒</span>
+          <span style="font-size: 32px; display: block; margin-bottom: 6px;">${isWeekend ? '🏖️' : '🎒'}</span>
           <p style="font-size: 13px; font-weight: 700; color: var(--text-main); margin: 0;">Nessuna materia in programma per ${sched.day_name || 'questo giorno'}</p>
-          <button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal()" style="margin-top: 12px; font-size: 12px; padding: 6px 12px;">➕ Aggiungi Materia</button>
+          ${isWeekend ? '<p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">Fine settimana scolastico</p>' : '<button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal()" style="margin-top: 12px; font-size: 12px; padding: 6px 12px;">➕ Aggiungi Materia</button>'}
         </div>
       `;
       return;
@@ -764,17 +765,18 @@ const Calendar = {
     container.innerHTML = "";
 
     const subjects = sched.subjects || [];
+    const isWeekend = (this.currentDate && (this.currentDate.getDay() === 0 || this.currentDate.getDay() === 6)) || sched.is_weekend || (sched.day_of_week === 6 || sched.day_of_week === 7);
 
     if (subjects.length === 0) {
       if (titleEl) titleEl.textContent = `📝 Nessuna Materia in Orario • ${sched.day_name || ''}`;
       container.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; background: #f8fafc; border-radius: 16px; border: 1px dashed var(--border-color);">
-          <span style="font-size: 36px; display: block; margin-bottom: 8px;">🎒</span>
+          <span style="font-size: 36px; display: block; margin-bottom: 8px;">${isWeekend ? '🏖️' : '🎒'}</span>
           <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Nessuna materia in programma per ${sched.day_name || 'questo giorno'}</h4>
           <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px; max-width: 380px; margin-left: auto; margin-right: auto;">
-            Usa le frecce ‹ › o seleziona un giorno in alto per consultare o assegnare i compiti.
+            ${isWeekend ? 'Il sabato e la domenica non prevedono lezioni in orario scolastico.' : 'Usa le frecce ‹ › o seleziona un giorno in alto per consultare o assegnare i compiti.'}
           </p>
-          <button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal()" style="margin-top: 14px; font-size: 13px; padding: 7px 16px;">➕ Aggiungi Materia in orario</button>
+          ${!isWeekend ? '<button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal()" style="margin-top: 14px; font-size: 13px; padding: 7px 16px;">➕ Aggiungi Materia in orario</button>' : ''}
         </div>
       `;
       return;
