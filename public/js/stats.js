@@ -321,58 +321,6 @@ const StatsDashboard = {
         });
       }
       card.appendChild(tasksDiv);
-
-      // Quick Add Task form directly inside Parent Dashboard
-      const quickAdd = document.createElement("div");
-      quickAdd.className = "parent-quick-add-task";
-      quickAdd.innerHTML = `
-        <input type="text" class="parent-quick-input" placeholder="✏️ Assegna compito a Giulio..." />
-        <select class="parent-quick-est" title="Tempo stimato">
-          <option value="1">1 min</option>
-          <option value="5">5 min</option>
-          <option value="10">10 min</option>
-          <option value="15">15 min</option>
-          <option value="20">20 min</option>
-          <option value="25" selected>25 min</option>
-          <option value="30">30 min</option>
-          <option value="45">45 min</option>
-          <option value="60">60 min</option>
-        </select>
-        <button type="button" class="parent-quick-btn">+ Assegna</button>
-      `;
-
-      const input = quickAdd.querySelector(".parent-quick-input");
-      const estSelect = quickAdd.querySelector(".parent-quick-est");
-      const btn = quickAdd.querySelector(".parent-quick-btn");
-
-      const submitQuick = async () => {
-        const title = input.value.trim();
-        if (!title) return;
-        const estMin = parseInt(estSelect.value || 25);
-        input.value = "";
-        input.disabled = true;
-        try {
-          await API.quickCreateTask(sub.event_id, title, estMin, this.currentTargetDateStr || null);
-          if (typeof window.App?.showToast === "function") {
-            window.App.showToast(`Compito assegnato a Giulio per ${sub.subject_name}!`, "📝");
-          }
-          await this.loadSelectedDay();
-          if (window.Calendar) {
-            await Calendar.renderDailySchedule();
-          }
-        } catch (e) {
-          console.error(e);
-        } finally {
-          input.disabled = false;
-        }
-      };
-
-      btn.addEventListener("click", submitQuick);
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") submitQuick();
-      });
-
-      card.appendChild(quickAdd);
       container.appendChild(card);
     });
   },
