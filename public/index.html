@@ -135,7 +135,7 @@
     <!-- ==================== VISTA GIORNALIERA A 2 COLONNE: EVENTI A SINISTRA, TODO A DESTRA ==================== -->
     <section id="viewAgenda" class="view-container active">
       <div class="daily-planner-container">
-        <!-- Barra di Navigazione Data: Solo Avanti, Indietro, Oggi e Data selezionata -->
+        <!-- Barra di Navigazione Data: Frecce, Titolo e Selezione Rapida dei Giorni -->
         <div class="daily-nav-bar">
           <div class="daily-date-header">
             <div class="daily-nav-arrows">
@@ -147,6 +147,8 @@
               <h2 id="dailyDateTitle">Caricamento data...</h2>
             </div>
           </div>
+          <!-- Strip dei Giorni della Settimana (Lunedì - Domenica) -->
+          <div id="dailyWeekStrip" class="daily-week-strip"></div>
         </div>
 
         <!-- LAYOUT A 2 COLONNE: SINISTRA EVENTI/MATERIE, DESTRA TUTTI I TO-DO -->
@@ -636,15 +638,15 @@
   <!-- Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-service.js?v=5.2"></script>
-  <script src="/js/api.js?v=5.2"></script>
-  <script src="/js/timer.js?v=5.2"></script>
-  <script src="/js/calendar.js?v=5.2"></script>
-  <script src="/js/stats.js?v=5.2"></script>
-  <script src="/js/app.js?v=5.2"></script>
+  <script src="/js/firebase-service.js?v=5.4"></script>
+  <script src="/js/api.js?v=5.4"></script>
+  <script src="/js/timer.js?v=5.4"></script>
+  <script src="/js/calendar.js?v=5.4"></script>
+  <script src="/js/stats.js?v=5.4"></script>
+  <script src="/js/app.js?v=5.4"></script>
   <script>
     // Gestione universale e immediata apertura/chiusura modale Aggiungi Materia
-    window.openSubjectModal = function() {
+    window.openSubjectModal = function(preselectedDow) {
       var m = document.getElementById("subjectModal");
       if (!m) return;
       m.classList.remove("hidden");
@@ -657,7 +659,7 @@
       }
       var daySelect = document.getElementById("subjectDaySelect");
       if (daySelect) {
-        var curDow = (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || new Date().getDay();
+        var curDow = preselectedDow || (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || (window.Calendar && window.Calendar.currentDate ? (window.Calendar.currentDate.getDay() === 0 ? 7 : window.Calendar.currentDate.getDay()) : 1);
         if (curDow < 1 || curDow > 5) curDow = 1;
         daySelect.value = String(curDow);
       }

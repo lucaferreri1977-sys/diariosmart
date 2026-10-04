@@ -628,11 +628,16 @@ const FirebaseService = {
 
       const catList = Object.values(bySubject).map((c, idx) => {
         const catDef = this.defaultCategories.find(dc => dc.name.toLowerCase() === c.name.toLowerCase());
+        const color = catDef ? catDef.color : "#3b82f6";
+        const icon = catDef ? catDef.icon : "📚";
         return {
           id: idx + 1,
           name: c.name,
-          color: catDef ? catDef.color : "#3b82f6",
-          icon: catDef ? catDef.icon : "📚",
+          category_name: c.name,
+          color: color,
+          category_color: color,
+          icon: icon,
+          category_icon: icon,
           tasks_count: c.tasks_count,
           completed_count: c.completed_count,
           estimated_minutes: c.estimated_minutes,

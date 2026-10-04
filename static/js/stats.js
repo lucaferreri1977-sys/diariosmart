@@ -4,13 +4,14 @@
 const StatsDashboard = {
   currentStats: null,
   selectedDayOfWeek: null,
+  currentTargetDateStr: null,
 
   init() {
     if (this._initialized) return;
     this._initialized = true;
 
     const periodSelect = document.getElementById("statsPeriodSelect");
-    periodSelect?.addEventListener("change", () => this.refresh());
+    periodSelect?.addEventListener("change", () => this.loadStats());
 
     const refreshBtn = document.getElementById("btnRefreshStats");
     refreshBtn?.addEventListener("click", () => this.refresh());
@@ -21,23 +22,10 @@ const StatsDashboard = {
     }
   },
 
-  async refresh() {
-    const days = parseInt(document.getElementById("statsPeriodSelect")?.value || 7);
+  getTargetDateForSelectedDow() {
     const today = new Date();
-    const endDate = Calendar.formatDateIso(today);
-    
-    const startDateObj = new Date(today);
-    startDateObj.setDate(startDateObj.getDate() - days);
-    const startDate = Calendar.formatDateIso(startDateObj);
-
-    if (this.selectedDayOfWeek === null || this.selectedDayOfWeek > 5 || this.selectedDayOfWeek < 1) {
-      const dow = today.getDay();
-      this.selectedDayOfWeek = (dow === 0 || dow === 6) ? 1 : dow;
-    }
-
-    // Calcola la data corrispondente al giorno selezionato nella settimana attiva
     const todayDow = today.getDay() === 0 ? 7 : today.getDay();
-    const monday = new Date(today);
+    const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0);
     if (todayDow >= 6) {
       // Nel weekend la settimana scolastica da pianificare è quella imminente di Lunedì
       monday.setDate(today.getDate() + (8 - todayDow));
@@ -47,26 +35,95 @@ const StatsDashboard = {
 
     const targetDate = new Date(monday);
     targetDate.setDate(monday.getDate() + (this.selectedDayOfWeek - 1));
+    return targetDate;
+  },
+
+  selectDay(dow) {
+    if (dow < 1 || dow > 5) dow = 1;
+    this.selectedDayOfWeek = dow;
+
+    // Aggiornamento immediato visivo tab (feedback istantaneo al click)
+    const bar = document.getElementById("parentDayTabsBar");
+    if (bar) {
+      bar.querySelectorAll(".parent-day-tab-btn").forEach(btn => {
+        const bDow = parseInt(btn.getAttribute("data-dow") || "0");
+        btn.classList.toggle("active", bDow === dow);
+      });
+    }
+
+    // Indicatore veloce di caricamento
+    const container = document.getElementById("parentTodaySubjectsList");
+    if (container) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; padding: 28px 16px; text-align: center; color: var(--text-muted);">
+          <span style="font-size: 24px; display: block; margin-bottom: 6px;">⏳</span>
+          <p style="font-weight: 600; font-size: 13px; margin: 0;">Caricamento orario e compiti...</p>
+        </div>
+      `;
+    }
+
+    this.loadSelectedDay();
+  },
+
+  async loadSelectedDay() {
+    if (this.selectedDayOfWeek === null || this.selectedDayOfWeek > 5 || this.selectedDayOfWeek < 1) {
+      const dow = new Date().getDay();
+      this.selectedDayOfWeek = (dow === 0 || dow === 6) ? 1 : dow;
+    }
+
+    const targetDate = this.getTargetDateForSelectedDow();
     const targetDateStr = Calendar.formatDateIso(targetDate);
     this.currentTargetDateStr = targetDateStr;
 
-    try {
-      const [statsRes, schedRes] = await Promise.all([
-        API.getStats(startDate, endDate),
-        API.getDailySchedule(targetDateStr)
-      ]);
+    // Renderizza o aggiorna i tab
+    this.renderDayTabs();
 
-      if (statsRes.ok) {
+    try {
+      const schedRes = await API.getDailySchedule(targetDateStr);
+      if (schedRes && schedRes.ok && schedRes.schedule) {
+        this.renderParentTodayMonitor(schedRes.schedule, targetDateStr, targetDate);
+      } else {
+        this.renderParentTodayMonitor({ day_name: "Giorno", subjects: [], totals: {} }, targetDateStr, targetDate);
+      }
+    } catch (err) {
+      console.error("Errore caricamento monitor genitore:", err);
+      const container = document.getElementById("parentTodaySubjectsList");
+      if (container) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--danger);">
+            <p style="font-weight:700;">Errore nel caricamento del giorno: ${err.message}</p>
+            <button type="button" class="btn-primary" style="margin-top:8px;" onclick="StatsDashboard.loadSelectedDay()">Riprova</button>
+          </div>
+        `;
+      }
+    }
+  },
+
+  async loadStats() {
+    const days = parseInt(document.getElementById("statsPeriodSelect")?.value || 7);
+    const today = new Date();
+    const endDate = Calendar.formatDateIso(today);
+    
+    const startDateObj = new Date(today);
+    startDateObj.setDate(startDateObj.getDate() - days);
+    const startDate = Calendar.formatDateIso(startDateObj);
+
+    try {
+      const statsRes = await API.getStats(startDate, endDate);
+      if (statsRes && statsRes.ok && statsRes.stats) {
         this.currentStats = statsRes.stats;
         this.render();
       }
-
-      if (schedRes && schedRes.ok && schedRes.schedule) {
-        this.renderParentTodayMonitor(schedRes.schedule, targetDateStr, targetDate);
-      }
     } catch (err) {
-      console.error("Errore caricamento statistiche / monitor genitore:", err);
+      console.error("Errore caricamento statistiche KPI:", err);
     }
+  },
+
+  async refresh() {
+    await Promise.allSettled([
+      this.loadStats(),
+      this.loadSelectedDay()
+    ]);
   },
 
   renderDayTabs() {
@@ -85,11 +142,11 @@ const StatsDashboard = {
     days.forEach(d => {
       const btn = document.createElement("button");
       btn.type = "button";
+      btn.setAttribute("data-dow", String(d.dow));
       btn.className = `parent-day-tab-btn ${this.selectedDayOfWeek === d.dow ? 'active' : ''}`;
       btn.textContent = d.name;
       btn.addEventListener("click", () => {
-        this.selectedDayOfWeek = d.dow;
-        this.refresh();
+        this.selectDay(d.dow);
       });
       bar.appendChild(btn);
     });
@@ -124,9 +181,13 @@ const StatsDashboard = {
     const subjects = (sched.subjects || []).map(s => ({ ...s, is_timetable: true }));
     if (subjects.length === 0) {
       container.innerHTML = `
-        <div style="grid-column: 1 / -1; padding: 28px 16px; text-align: center; background: #f8fafc; border-radius: 14px; border: 1px dashed var(--border-color);">
-          <span style="font-size: 32px; display: block; margin-bottom: 6px;">🎒</span>
-          <p style="font-weight: 700; font-size: 14px; color: var(--text-main); margin: 0;">Nessuna materia in orario per ${sched.day_name || 'questo giorno'}</p>
+        <div style="grid-column: 1 / -1; padding: 36px 20px; text-align: center; background: #f8fafc; border-radius: 14px; border: 2px dashed #cbd5e1;">
+          <span style="font-size: 36px; display: block; margin-bottom: 8px;">🎒</span>
+          <p style="font-weight: 800; font-size: 15px; color: var(--text-main); margin-bottom: 6px;">Nessuna materia in orario per ${sched.day_name || 'questo giorno'}</p>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Configura le materie scolastiche di ${sched.day_name || 'questo giorno'} per assegnare compiti a Giulio.</p>
+          <button type="button" class="btn-primary" onclick="window.openSubjectModal(${this.selectedDayOfWeek})" style="display: inline-flex; align-items: center; gap: 8px; margin: 0 auto;">
+            <span>➕ Aggiungi Materia per ${sched.day_name || 'questo giorno'}</span>
+          </button>
         </div>
       `;
       return;
@@ -181,7 +242,7 @@ const StatsDashboard = {
             if (typeof window.App?.showToast === "function") {
               window.App.showToast(`Materia "${sub.subject_name}" eliminata con successo`, "🗑️");
             }
-            await this.refresh();
+            await this.loadSelectedDay();
             if (window.Calendar) {
               await window.Calendar.renderDailySchedule();
             }
@@ -224,8 +285,10 @@ const StatsDashboard = {
           chk.addEventListener("change", async () => {
             try {
               await API.toggleTodoItem(item.id, chk.checked);
-              this.refresh();
-              Calendar.renderDailySchedule();
+              await this.loadSelectedDay();
+              if (window.Calendar) {
+                Calendar.renderDailySchedule();
+              }
             } catch (e) {
               console.error(e);
             }
@@ -270,8 +333,10 @@ const StatsDashboard = {
           if (typeof window.App?.showToast === "function") {
             window.App.showToast(`Compito assegnato a Giulio per ${sub.subject_name}!`, "📝");
           }
-          await this.refresh();
-          await Calendar.renderDailySchedule();
+          await this.loadSelectedDay();
+          if (window.Calendar) {
+            await Calendar.renderDailySchedule();
+          }
         } catch (e) {
           console.error(e);
         } finally {
@@ -293,44 +358,55 @@ const StatsDashboard = {
     if (!this.currentStats) return;
 
     const { general, by_category, top_deviations } = this.currentStats;
+    const g = general || {};
 
     // 1. KPI Cards
-    const actMin = general.total_actual_minutes || 0;
-    const estMin = general.total_estimated_minutes || 0;
-    document.getElementById("kpiActualTime").textContent = TaskTimer.formatMinutesHuman(actMin);
-    document.getElementById("kpiEstimatedTime").textContent = `stima: ${TaskTimer.formatMinutesHuman(estMin)}`;
+    const actMin = g.total_actual_minutes || 0;
+    const estMin = g.total_estimated_minutes || 0;
+    const kpiAct = document.getElementById("kpiActualTime");
+    const kpiEst = document.getElementById("kpiEstimatedTime");
+    if (kpiAct) kpiAct.textContent = TaskTimer.formatMinutesHuman(actMin);
+    if (kpiEst) kpiEst.textContent = `stima: ${TaskTimer.formatMinutesHuman(estMin)}`;
 
-    const totalTasks = general.total_tasks || 0;
-    const compTasks = general.completed_tasks || 0;
+    const totalTasks = g.total_tasks || 0;
+    const compTasks = g.completed_tasks || 0;
     const rate = totalTasks > 0 ? Math.round((compTasks / totalTasks) * 100) : 0;
-    document.getElementById("kpiCompletionRate").textContent = `${rate}%`;
-    document.getElementById("kpiCompletedTasksCount").textContent = `${compTasks} di ${totalTasks}`;
+    const kpiRate = document.getElementById("kpiCompletionRate");
+    const kpiCount = document.getElementById("kpiCompletedTasksCount");
+    if (kpiRate) kpiRate.textContent = `${rate}%`;
+    if (kpiCount) kpiCount.textContent = `${compTasks} di ${totalTasks}`;
 
     const diff = actMin - estMin;
     const diffEl = document.getElementById("kpiTimeDiff");
     const diffStatusEl = document.getElementById("kpiDiffStatus");
-    if (diff > 0) {
-      diffEl.textContent = `+${TaskTimer.formatMinutesHuman(diff)}`;
-      diffEl.style.color = "var(--danger)";
-      diffStatusEl.textContent = "richiesto più tempo del previsto";
-    } else if (diff < 0) {
-      diffEl.textContent = `-${TaskTimer.formatMinutesHuman(Math.abs(diff))}`;
-      diffEl.style.color = "var(--success)";
-      diffStatusEl.textContent = "compiti svolti più rapidamente";
-    } else {
-      diffEl.textContent = "0m";
-      diffEl.style.color = "var(--text-main)";
-      diffStatusEl.textContent = "perfettamente in linea";
+    if (diffEl && diffStatusEl) {
+      if (diff > 0) {
+        diffEl.textContent = `+${TaskTimer.formatMinutesHuman(diff)}`;
+        diffEl.style.color = "var(--danger)";
+        diffStatusEl.textContent = "richiesto più tempo del previsto";
+      } else if (diff < 0) {
+        diffEl.textContent = `-${TaskTimer.formatMinutesHuman(Math.abs(diff))}`;
+        diffEl.style.color = "var(--success)";
+        diffStatusEl.textContent = "compiti svolti più rapidamente";
+      } else {
+        diffEl.textContent = "0m";
+        diffEl.style.color = "var(--text-main)";
+        diffStatusEl.textContent = "perfettamente in linea";
+      }
     }
 
     // Materia più impegnativa
+    const kpiTop = document.getElementById("kpiTopSubject");
+    const kpiTopH = document.getElementById("kpiTopSubjectHours");
     if (by_category && by_category.length > 0 && (by_category[0].actual_minutes > 0 || by_category[0].tasks_count > 0)) {
       const topCat = by_category[0];
-      document.getElementById("kpiTopSubject").textContent = `${topCat.category_icon || '📚'} ${topCat.category_name}`;
-      document.getElementById("kpiTopSubjectHours").textContent = `${TaskTimer.formatMinutesHuman(topCat.actual_minutes)} dedicati (${topCat.tasks_count} compiti)`;
+      const catName = topCat.category_name || topCat.name || "Materia";
+      const catIcon = topCat.category_icon || topCat.icon || "📚";
+      if (kpiTop) kpiTop.textContent = `${catIcon} ${catName}`;
+      if (kpiTopH) kpiTopH.textContent = `${TaskTimer.formatMinutesHuman(topCat.actual_minutes || 0)} dedicati (${topCat.tasks_count || 0} compiti)`;
     } else {
-      document.getElementById("kpiTopSubject").textContent = "-";
-      document.getElementById("kpiTopSubjectHours").textContent = "Nessuna attività registrata";
+      if (kpiTop) kpiTop.textContent = "-";
+      if (kpiTopH) kpiTopH.textContent = "Nessuna attività registrata";
     }
 
     // 2. Barre di confronto per materia
@@ -338,23 +414,31 @@ const StatsDashboard = {
     if (barsContainer) {
       barsContainer.innerHTML = "";
 
-      const activeCats = (by_category || []).filter(c => (c.tasks_count > 0 || c.actual_minutes > 0 || c.estimated_minutes > 0));
+      const activeCats = (by_category || []).filter(c => ((c.tasks_count || 0) > 0 || (c.actual_minutes || 0) > 0 || (c.estimated_minutes || 0) > 0));
       if (activeCats.length === 0) {
         barsContainer.innerHTML = `<p class="text-muted" style="font-size:13px; text-align:center; padding:24px 16px;">Nessuna attività registrata nel periodo selezionato. Quando Giulio svolgerà compiti o sessioni di studio, qui vedrai la distribuzione del tempo per materia.</p>`;
       } else {
         // Trova il massimo per scalare le barre
-        const maxMin = Math.max(...activeCats.map(c => Math.max(c.actual_minutes, c.estimated_minutes, 30)));
+        const maxMin = Math.max(...activeCats.map(c => Math.max(c.actual_minutes || 0, c.estimated_minutes || 0, 30)));
 
         activeCats.forEach(cat => {
+          const catName = cat.category_name || cat.name || "Materia";
+          const catIcon = cat.category_icon || cat.icon || "📚";
+          const catColor = cat.category_color || cat.color || "#3b82f6";
+          const catAct = cat.actual_minutes || 0;
+          const catEst = cat.estimated_minutes || 0;
+          const catTasks = cat.tasks_count || 0;
+          const catDone = cat.completed_count || 0;
+
           const row = document.createElement("div");
           row.className = "subject-bar-row";
 
-          const actPct = Math.min(100, Math.round((cat.actual_minutes / maxMin) * 100));
-          const estPct = Math.min(100, Math.round((cat.estimated_minutes / maxMin) * 100));
-          const catDiff = cat.actual_minutes - cat.estimated_minutes;
+          const actPct = Math.min(100, Math.round((catAct / maxMin) * 100));
+          const estPct = Math.min(100, Math.round((catEst / maxMin) * 100));
+          const catDiff = catAct - catEst;
 
           let diffBadge = "";
-          if (cat.actual_minutes > 0 && cat.estimated_minutes > 0) {
+          if (catAct > 0 && catEst > 0) {
             if (catDiff > 0) {
               diffBadge = `<span class="time-badge act-over">+${catDiff}m</span>`;
             } else if (catDiff < 0) {
@@ -366,18 +450,18 @@ const StatsDashboard = {
 
           row.innerHTML = `
             <div class="subject-bar-meta">
-              <span>${cat.category_icon} ${cat.category_name} (${cat.completed_count}/${cat.tasks_count} compiti)</span>
+              <span>${catIcon} ${catName} (${catDone}/${catTasks} compiti)</span>
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:12px; color:var(--text-muted);">
-                  Reale: <strong>${TaskTimer.formatMinutesHuman(cat.actual_minutes)}</strong> | Stima: ${TaskTimer.formatMinutesHuman(cat.estimated_minutes)}
+                  Reale: <strong>${TaskTimer.formatMinutesHuman(catAct)}</strong> | Stima: ${TaskTimer.formatMinutesHuman(catEst)}
                 </span>
                 ${diffBadge}
               </div>
             </div>
-            <div class="subject-bar-tracks" style="margin-bottom: 4px;" title="Tempo Effettivo: ${cat.actual_minutes}m">
-              <div class="bar-act-fill" style="width: ${Math.max(4, actPct)}%; background: ${cat.category_color};"></div>
+            <div class="subject-bar-tracks" style="margin-bottom: 4px;" title="Tempo Effettivo: ${catAct}m">
+              <div class="bar-act-fill" style="width: ${Math.max(4, actPct)}%; background: ${catColor};"></div>
             </div>
-            <div class="subject-bar-tracks" style="height: 6px; background: #e2e8f0;" title="Tempo Stimato: ${cat.estimated_minutes}m">
+            <div class="subject-bar-tracks" style="height: 6px; background: #e2e8f0;" title="Tempo Stimato: ${catEst}m">
               <div class="bar-est-fill" style="width: ${Math.max(4, estPct)}%;"></div>
             </div>
           `;
@@ -399,20 +483,20 @@ const StatsDashboard = {
           const item = document.createElement("div");
           item.className = "overtime-task-row";
 
-          const diffVal = task.diff_minutes;
+          const diffVal = task.diff_minutes || 0;
           const isOver = diffVal > 0;
 
           item.innerHTML = `
             <div>
-              <div class="overtime-title">${task.task_title}</div>
+              <div class="overtime-title">${task.task_title || 'Compito'}</div>
               <div class="overtime-sub">
-                ${task.category_name} • Evento: <strong>${task.event_title}</strong> (${task.event_date})
+                ${task.category_name || ''} • Evento: <strong>${task.event_title || ''}</strong> (${task.event_date || ''})
               </div>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
               <div style="text-align:right; font-size:12px;">
-                <div>Impiegato: <strong>${task.actual_minutes}m</strong></div>
-                <div class="text-muted">Stima: ${task.estimated_minutes}m</div>
+                <div>Impiegato: <strong>${task.actual_minutes || 0}m</strong></div>
+                <div class="text-muted">Stima: ${task.estimated_minutes || 0}m</div>
               </div>
               <span class="overtime-tag" style="background:${isOver ? '#fee2e2' : '#dcfce7'}; color:${isOver ? '#b91c1c' : '#166534'};">
                 ${isOver ? `+${diffVal}m` : `${diffVal}m`}

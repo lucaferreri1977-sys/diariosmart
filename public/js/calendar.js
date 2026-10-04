@@ -232,8 +232,9 @@ const Calendar = {
         const col = document.createElement("div");
         col.className = `week-day-column ${isToday ? 'is-today' : ''}`;
 
-        // Header del giorno
-        const dayDateObj = new Date(day.date);
+        // Header del giorno (parsing data a mezzogiorno per evitare sfalsamenti di fuso orario)
+        const parts = day.date.split("-").map(Number);
+        const dayDateObj = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
         const header = document.createElement("div");
         header.className = "week-day-col-header";
         header.title = "Clicca per aprire la visione dettagliata di questo giorno";
@@ -251,18 +252,27 @@ const Calendar = {
             <span class="week-day-col-num">${dayDateObj.getDate()}</span>
           </div>
         `;
-        header.addEventListener("click", () => {
-          this.currentDate = new Date(day.date);
+
+        const openDayInAgenda = () => {
+          this.currentDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
           this.selectedSubjectEventId = null;
           if (typeof window.App?.switchView === "function") {
             window.App.switchView("agenda");
           }
-        });
+        };
+
+        header.addEventListener("click", openDayInAgenda);
         col.appendChild(header);
 
         // Corpo della colonna con materie e relativi to-do
         const dayBody = document.createElement("div");
         dayBody.className = "week-day-body";
+
+        // Cliccando sul corpo del giorno si apre la vista dettagliata di quel giorno
+        dayBody.addEventListener("click", (e) => {
+          if (e.target.closest("input") || e.target.closest("button") || e.target.closest(".week-subject-header")) return;
+          openDayInAgenda();
+        });
 
         const renderedTaskIds = new Set();
         const daySubjects = day.subjects || [];
@@ -271,7 +281,8 @@ const Calendar = {
           if (!day.is_weekend) {
             const emptyDiv = document.createElement("div");
             emptyDiv.className = "week-day-empty-msg";
-            emptyDiv.textContent = "Nessuna materia in programma";
+            emptyDiv.style.cursor = "pointer";
+            emptyDiv.innerHTML = `<span>Nessuna materia in programma</span><br><span style="font-size:11px; color:var(--primary); font-weight:700; margin-top:4px; display:inline-block;">Apri giorno →</span>`;
             dayBody.appendChild(emptyDiv);
           }
         } else {
@@ -292,8 +303,9 @@ const Calendar = {
               </div>
               <span class="week-subject-header-time">${sub.start_time} - ${sub.end_time}</span>
             `;
-            subHeader.addEventListener("click", () => {
-              this.currentDate = new Date(day.date);
+            subHeader.addEventListener("click", (e) => {
+              e.stopPropagation();
+              this.currentDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
               this.selectedSubjectEventId = sub.event_id;
               if (typeof window.App?.switchView === "function") {
                 window.App.switchView("agenda");
@@ -535,7 +547,7 @@ const Calendar = {
         <span class="day-pill-num">${iter.getDate()}</span>
       `;
 
-      const targetDate = new Date(iter);
+      const targetDate = new Date(iter.getFullYear(), iter.getMonth(), iter.getDate(), 12, 0, 0);
       btn.addEventListener("click", () => {
         this.currentDate = targetDate;
         this.selectedSubjectEventId = null;
@@ -552,6 +564,9 @@ const Calendar = {
     
     // Aggiorna titolo della data selezionata
     const titleEl = document.getElementById("dailyDateTitle");
+
+    // Aggiorna strip giorni della settimana se presente
+    this.renderDailyWeekStrip();
 
     try {
       const res = await API.getDailySchedule(dateStr);
@@ -628,6 +643,7 @@ const Calendar = {
         <div style="text-align: center; padding: 32px 12px; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--border-color);">
           <span style="font-size: 32px; display: block; margin-bottom: 6px;">🎒</span>
           <p style="font-size: 13px; font-weight: 700; color: var(--text-main); margin: 0;">Nessuna materia in programma per ${sched.day_name || 'questo giorno'}</p>
+          <button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal()" style="margin-top: 12px; font-size: 12px; padding: 6px 12px;">➕ Aggiungi Materia</button>
         </div>
       `;
       return;
@@ -737,8 +753,9 @@ const Calendar = {
           <span style="font-size: 36px; display: block; margin-bottom: 8px;">🎒</span>
           <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Nessuna materia in programma per ${sched.day_name || 'questo giorno'}</h4>
           <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px; max-width: 380px; margin-left: auto; margin-right: auto;">
-            Usa le frecce ‹ › in alto per spostarti su un giorno scolastico per consultare o assegnare i compiti.
+            Usa le frecce ‹ › o seleziona un giorno in alto per consultare o assegnare i compiti.
           </p>
+          <button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal()" style="margin-top: 14px; font-size: 13px; padding: 7px 16px;">➕ Aggiungi Materia in orario</button>
         </div>
       `;
       return;

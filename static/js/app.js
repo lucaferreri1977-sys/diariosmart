@@ -314,16 +314,16 @@ const App = {
     });
   },
 
-  openSubjectModal() {
+  openSubjectModal(preselectedDow) {
     this.openModal("subjectModal");
 
     const nameInput = document.getElementById("subjectNameInput");
     if (nameInput) nameInput.value = "";
     
-    // Preseleziona il giorno attualmente visualizzato nella dashboard o oggi (Lunedì - Venerdì)
+    // Preseleziona il giorno passato o attualmente visualizzato nella dashboard o oggi (Lunedì - Venerdì)
     const daySelect = document.getElementById("subjectDaySelect");
     if (daySelect) {
-      let currentDay = (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || (new Date().getDay());
+      let currentDay = preselectedDow || (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || (window.Calendar && window.Calendar.currentDate ? (window.Calendar.currentDate.getDay() === 0 ? 7 : window.Calendar.currentDate.getDay()) : 1);
       if (currentDay < 1 || currentDay > 5) currentDay = 1;
       daySelect.value = String(currentDay);
     }
@@ -1352,7 +1352,7 @@ window.onUnauthorized = () => {
 
 // Funzioni globali di aggancio
 window.App = App;
-window.openSubjectModal = () => App.openSubjectModal();
+window.openSubjectModal = (preselectedDow) => App.openSubjectModal(preselectedDow);
 window.openEventDetailModal = (id) => App.openEventDetailModal(id);
 window.openCreateEventModal = (date) => App.openCreateEventModal(date);
 
