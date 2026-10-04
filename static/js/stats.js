@@ -277,6 +277,9 @@ const StatsDashboard = {
             <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; flex-shrink: 0;">
               <span class="time-badge est">⏱️ ${item.estimated_minutes}m</span>
               ${item.actual_minutes > 0 ? `<span class="time-badge act-good">⌛ ${item.actual_minutes}m</span>` : ''}
+              <button type="button" class="btn-parent-task-del parent-only" title="Elimina questo compito">
+                🗑️
+              </button>
             </div>
           `;
 
@@ -291,6 +294,26 @@ const StatsDashboard = {
               }
             } catch (e) {
               console.error(e);
+            }
+          });
+
+          // Click eliminazione compito per genitore
+          const delTaskBtn = tRow.querySelector(".btn-parent-task-del");
+          delTaskBtn?.addEventListener("click", async (e) => {
+            e.stopPropagation();
+            if (!confirm(`Vuoi davvero eliminare il compito "${item.title}"?`)) return;
+            try {
+              delTaskBtn.disabled = true;
+              await API.deleteTodoItem(item.id);
+              if (typeof window.App?.showToast === "function") {
+                window.App.showToast(`Compito "${item.title}" eliminato con successo`, "🗑️");
+              }
+              await this.loadSelectedDay();
+              if (window.Calendar) {
+                await window.Calendar.renderDailySchedule();
+              }
+            } catch (err) {
+              alert("Errore durante l'eliminazione del compito: " + err.message);
             }
           });
 

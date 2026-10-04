@@ -2993,6 +2993,29 @@ body.app-body {
   color: var(--text-muted);
 }
 
+.btn-parent-task-del {
+  background: #ffffff;
+  border: 1px solid #fee2e2;
+  color: #dc2626;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 3px 7px;
+  border-radius: 6px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  margin-left: 4px;
+}
+
+.btn-parent-task-del:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+  transform: scale(1.05);
+}
+
 .parent-quick-add-task {
   display: flex;
   gap: 6px;
