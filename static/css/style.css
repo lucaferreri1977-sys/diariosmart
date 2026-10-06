@@ -3810,12 +3810,40 @@ body.app-body {
   font-style: italic;
 }
 
+.week-todo-indicator {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  user-select: none;
+  pointer-events: none;
+  margin-top: 1px;
+}
+
+.week-todo-indicator.pending {
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: transparent;
+}
+
+.week-todo-indicator.completed {
+  background: var(--primary);
+  border: 1.5px solid var(--primary);
+  color: #ffffff;
+}
+
 .week-todo-check {
   width: 14px;
   height: 14px;
-  cursor: pointer;
-  accent-color: var(--primary);
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 /* ==================== OTTIMIZZAZIONE RESPONSIVE PER SMARTPHONE (<= 768px) ==================== */

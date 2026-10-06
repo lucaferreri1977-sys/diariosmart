@@ -332,28 +332,27 @@ const Calendar = {
                 renderedTaskIds.add(task.id);
                 const row = document.createElement("div");
                 row.className = `week-sub-todo-row ${task.completed ? 'completed' : ''}`;
-
-                const chk = document.createElement("input");
-                chk.type = "checkbox";
-                chk.className = "week-todo-check";
-                chk.checked = !!task.completed;
-                chk.title = "Segna come completato / da fare";
-                chk.addEventListener("change", async (e) => {
+                row.title = `${task.title} (Apri nel diario del giorno)`;
+                row.style.cursor = "pointer";
+                row.addEventListener("click", (e) => {
                   e.stopPropagation();
-                  try {
-                    await API.toggleTodoItem(task.id, chk.checked);
-                    this.renderWeekView();
-                  } catch (err) {
-                    console.error("Errore toggle task:", err);
+                  this.currentDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+                  this.selectedSubjectEventId = sub.event_id || null;
+                  if (typeof window.App?.switchView === "function") {
+                    window.App.switchView("agenda");
                   }
                 });
+
+                const indicator = document.createElement("span");
+                indicator.className = `week-todo-indicator ${task.completed ? 'completed' : 'pending'}`;
+                indicator.title = task.completed ? "Compito completato" : "Compito da fare";
+                indicator.innerHTML = task.completed ? "✓" : "";
 
                 const titleSpan = document.createElement("span");
                 titleSpan.className = "week-sub-todo-title";
                 titleSpan.textContent = task.title;
-                titleSpan.title = task.title;
 
-                row.appendChild(chk);
+                row.appendChild(indicator);
                 row.appendChild(titleSpan);
 
                 if (task.estimated_minutes > 0) {
@@ -407,26 +406,27 @@ const Calendar = {
                   renderedTaskIds.add(task.id);
                   const row = document.createElement("div");
                   row.className = `week-sub-todo-row ${task.completed ? 'completed' : ''}`;
-
-                  const chk = document.createElement("input");
-                  chk.type = "checkbox";
-                  chk.className = "week-todo-check";
-                  chk.checked = !!task.completed;
-                  chk.addEventListener("change", async (e) => {
+                  row.title = `${task.title} (Apri nel diario del giorno)`;
+                  row.style.cursor = "pointer";
+                  row.addEventListener("click", (e) => {
                     e.stopPropagation();
-                    try {
-                      await API.toggleTodoItem(task.id, chk.checked);
-                      this.renderWeekView();
-                    } catch (err) {
-                      console.error("Errore toggle extra task:", err);
+                    this.currentDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+                    this.selectedSubjectEventId = ex.id || null;
+                    if (typeof window.App?.switchView === "function") {
+                      window.App.switchView("agenda");
                     }
                   });
+
+                  const indicator = document.createElement("span");
+                  indicator.className = `week-todo-indicator ${task.completed ? 'completed' : 'pending'}`;
+                  indicator.title = task.completed ? "Compito completato" : "Compito da fare";
+                  indicator.innerHTML = task.completed ? "✓" : "";
 
                   const titleSpan = document.createElement("span");
                   titleSpan.className = "week-sub-todo-title";
                   titleSpan.textContent = task.title;
 
-                  row.appendChild(chk);
+                  row.appendChild(indicator);
                   row.appendChild(titleSpan);
                   if (task.estimated_minutes > 0) {
                     const estSpan = document.createElement("span");
@@ -465,26 +465,27 @@ const Calendar = {
             unrendered.forEach(task => {
               const row = document.createElement("div");
               row.className = `week-sub-todo-row ${task.completed ? 'completed' : ''}`;
-
-              const chk = document.createElement("input");
-              chk.type = "checkbox";
-              chk.className = "week-todo-check";
-              chk.checked = !!task.completed;
-              chk.addEventListener("change", async (e) => {
+              row.title = `${task.title} (Apri nel diario del giorno)`;
+              row.style.cursor = "pointer";
+              row.addEventListener("click", (e) => {
                 e.stopPropagation();
-                try {
-                  await API.toggleTodoItem(task.id, chk.checked);
-                  this.renderWeekView();
-                } catch (err) {
-                  console.error(err);
+                this.currentDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+                this.selectedSubjectEventId = null;
+                if (typeof window.App?.switchView === "function") {
+                  window.App.switchView("agenda");
                 }
               });
+
+              const indicator = document.createElement("span");
+              indicator.className = `week-todo-indicator ${task.completed ? 'completed' : 'pending'}`;
+              indicator.title = task.completed ? "Compito completato" : "Compito da fare";
+              indicator.innerHTML = task.completed ? "✓" : "";
 
               const titleSpan = document.createElement("span");
               titleSpan.className = "week-sub-todo-title";
               titleSpan.textContent = task.title;
 
-              row.appendChild(chk);
+              row.appendChild(indicator);
               row.appendChild(titleSpan);
               if (task.estimated_minutes > 0) {
                 const estSpan = document.createElement("span");
