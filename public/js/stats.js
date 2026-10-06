@@ -204,7 +204,7 @@ const StatsDashboard = {
       header.innerHTML = `
         <div class="parent-subject-header-info">
           <span style="font-weight: 800; font-size: 15px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            ${sub.category_icon || '📚'} ${sub.subject_name}
+            ${sub.subject_name}
           </span>
           <span style="font-size: 12px; color: var(--text-muted); font-weight: 600; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; white-space: nowrap;">
             ${sub.start_time} - ${sub.end_time}
@@ -297,8 +297,7 @@ const StatsDashboard = {
     if (by_category && by_category.length > 0 && (by_category[0].actual_minutes > 0 || by_category[0].tasks_count > 0)) {
       const topCat = by_category[0];
       const catName = topCat.category_name || topCat.name || "Materia";
-      const catIcon = topCat.category_icon || topCat.icon || "📚";
-      if (kpiTop) kpiTop.textContent = `${catIcon} ${catName}`;
+      if (kpiTop) kpiTop.textContent = catName;
       if (kpiTopH) kpiTopH.textContent = `${TaskTimer.formatMinutesHuman(topCat.actual_minutes || 0)} dedicati (${topCat.tasks_count || 0} compiti)`;
     } else {
       if (kpiTop) kpiTop.textContent = "-";
@@ -319,7 +318,6 @@ const StatsDashboard = {
 
         activeCats.forEach(cat => {
           const catName = cat.category_name || cat.name || "Materia";
-          const catIcon = cat.category_icon || cat.icon || "📚";
           const catColor = cat.category_color || cat.color || "#3b82f6";
           const catAct = cat.actual_minutes || 0;
           const catEst = cat.estimated_minutes || 0;
@@ -346,7 +344,7 @@ const StatsDashboard = {
 
           row.innerHTML = `
             <div class="subject-bar-meta">
-              <span>${catIcon} ${catName} (${catDone}/${catTasks} compiti)</span>
+              <span>${catName} (${catDone}/${catTasks} compiti)</span>
               <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-size:12px; color:var(--text-muted);">
                   Reale: <strong>${TaskTimer.formatMinutesHuman(catAct)}</strong> | Stima: ${TaskTimer.formatMinutesHuman(catEst)}

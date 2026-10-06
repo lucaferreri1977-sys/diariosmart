@@ -380,7 +380,7 @@ const TaskTimer = {
 
     // Titolo e sottotitolo
     document.getElementById("vtmTaskTitle").textContent = item.title;
-    document.getElementById("vtmEventSub").textContent = `${categoryInfo.icon || '📚'} ${categoryInfo.name || 'Compito'} • Conto alla rovescia impostato`;
+    document.getElementById("vtmEventSub").textContent = `${categoryInfo.name || 'Compito'} • Conto alla rovescia impostato`;
 
     // Aggiorna orologio e display
     this.updateModalCountdown(formatted, remainingMin, targetMin, elapsedSec, isOvertime, overtimeSec);

@@ -613,7 +613,7 @@ const App = {
   renderEventDetailModal(ev) {
     // Header & Meta
     const badge = document.getElementById("modalEventCategoryBadge");
-    badge.textContent = `${ev.category_icon || '📚'} ${ev.category_name || 'Generale'}`;
+    badge.textContent = `${ev.category_name || 'Generale'}`;
     badge.style.backgroundColor = ev.category_color || "var(--primary)";
 
     document.getElementById("modalEventTitle").textContent = ev.title;

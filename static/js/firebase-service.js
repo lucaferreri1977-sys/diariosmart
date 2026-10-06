@@ -158,18 +158,21 @@ const FirebaseService = {
   async addTimetableSlot(slotData) {
     await this.init();
     try {
-      const cat = this.defaultCategories.find(c => c.name.toLowerCase() === (slotData.subject_name || '').toLowerCase()) ||
-                  this.defaultCategories[0];
+      const matchedCat = this.defaultCategories.find(c => c.name.toLowerCase() === (slotData.subject_name || '').toLowerCase());
+      const catId = slotData.category_id || (matchedCat ? matchedCat.id : 1);
+      const catName = slotData.category_name || (matchedCat ? matchedCat.name : (slotData.subject_name || "Materia"));
+      const catColor = slotData.category_color || (matchedCat ? matchedCat.color : "#3b82f6");
+      const catIcon = slotData.category_icon || (matchedCat ? matchedCat.icon : "");
 
       const docRef = await this.db.collection("timetable_slots").add({
         user_id: slotData.user_id ? Number(slotData.user_id) : 2,
         day_of_week: parseInt(slotData.day_of_week || 1),
         period_number: parseInt(slotData.period_number || 1),
-        category_id: slotData.category_id || cat.id,
+        category_id: catId,
         subject_name: slotData.subject_name || "Materia",
-        category_name: slotData.category_name || cat.name,
-        category_color: slotData.category_color || cat.color,
-        category_icon: slotData.category_icon || cat.icon,
+        category_name: catName,
+        category_color: catColor,
+        category_icon: catIcon,
         start_time: slotData.start_time || "08:00",
         end_time: slotData.end_time || "09:00",
         room: slotData.room || "",
