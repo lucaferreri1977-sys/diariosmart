@@ -100,13 +100,18 @@ const StatsDashboard = {
   },
 
   async loadStats() {
-    const days = parseInt(document.getElementById("statsPeriodSelect")?.value || 7);
-    const today = new Date();
-    const endDate = Calendar.formatDateIso(today);
-    
-    const startDateObj = new Date(today);
-    startDateObj.setDate(startDateObj.getDate() - days);
-    const startDate = Calendar.formatDateIso(startDateObj);
+    const periodVal = document.getElementById("statsPeriodSelect")?.value || "7";
+    let startDate = null;
+    let endDate = null;
+
+    if (periodVal !== "all") {
+      const days = parseInt(periodVal) || 7;
+      const today = new Date();
+      endDate = Calendar.formatDateIso(today);
+      const startDateObj = new Date(today);
+      startDateObj.setDate(startDateObj.getDate() - days);
+      startDate = Calendar.formatDateIso(startDateObj);
+    }
 
     try {
       const statsRes = await API.getStats(startDate, endDate);
@@ -314,32 +319,40 @@ const StatsDashboard = {
       }
     }
 
-    // Materia più impegnativa
+    // Materia più impegnativa (calcolata su tempo reale effettivo, poi stima, poi compiti)
     const kpiTop = document.getElementById("kpiTopSubject");
     const kpiTopH = document.getElementById("kpiTopSubjectHours");
-    if (by_category && by_category.length > 0 && (by_category[0].actual_minutes > 0 || by_category[0].tasks_count > 0)) {
-      const topCat = by_category[0];
+    const activeCatsWithWork = (by_category || []).filter(c => ((c.actual_minutes || 0) > 0 || (c.estimated_minutes || 0) > 0 || (c.tasks_count || 0) > 0));
+    if (activeCatsWithWork.length > 0) {
+      const topCat = activeCatsWithWork[0];
       const catName = topCat.category_name || topCat.name || "Materia";
       if (kpiTop) kpiTop.textContent = catName;
-      if (kpiTopH) kpiTopH.textContent = `${TaskTimer.formatMinutesHuman(topCat.actual_minutes || 0)} dedicati (${topCat.tasks_count || 0} compiti)`;
+      if (kpiTopH) {
+        const countLabel = topCat.tasks_count === 1 ? "1 compito" : `${topCat.tasks_count || 0} compiti`;
+        if ((topCat.actual_minutes || 0) > 0) {
+          kpiTopH.textContent = `${TaskTimer.formatMinutesHuman(topCat.actual_minutes)} dedicati (${countLabel})`;
+        } else {
+          kpiTopH.textContent = `${countLabel} (stima ${TaskTimer.formatMinutesHuman(topCat.estimated_minutes || 0)})`;
+        }
+      }
     } else {
       if (kpiTop) kpiTop.textContent = "-";
       if (kpiTopH) kpiTopH.textContent = "Nessuna attività registrata";
     }
 
-    // 2. Barre di confronto per materia
+    // 2. Barre di confronto per materia (mostra tutte le materie dell'orario scolastico)
     const barsContainer = document.getElementById("subjectBarsContainer");
     if (barsContainer) {
       barsContainer.innerHTML = "";
 
-      const activeCats = (by_category || []).filter(c => ((c.tasks_count || 0) > 0 || (c.actual_minutes || 0) > 0 || (c.estimated_minutes || 0) > 0));
-      if (activeCats.length === 0) {
-        barsContainer.innerHTML = `<p class="text-muted" style="font-size:13px; text-align:center; padding:24px 16px;">Nessuna attività registrata nel periodo selezionato. Quando Giulio svolgerà compiti o sessioni di studio, qui vedrai la distribuzione del tempo per materia.</p>`;
+      const allCats = by_category || [];
+      if (allCats.length === 0) {
+        barsContainer.innerHTML = `<p class="text-muted" style="font-size:13px; text-align:center; padding:24px 16px;">Nessuna materia configurata nell'orario scolastico o compiti registrati nel periodo selezionato.</p>`;
       } else {
         // Trova il massimo per scalare le barre
-        const maxMin = Math.max(...activeCats.map(c => Math.max(c.actual_minutes || 0, c.estimated_minutes || 0, 30)));
+        const maxMin = Math.max(...allCats.map(c => Math.max(c.actual_minutes || 0, c.estimated_minutes || 0, 30)));
 
-        activeCats.forEach(cat => {
+        allCats.forEach(cat => {
           const catName = cat.category_name || cat.name || "Materia";
           const catColor = cat.category_color || cat.color || "#3b82f6";
           const catAct = cat.actual_minutes || 0;
@@ -365,30 +378,46 @@ const StatsDashboard = {
             }
           }
 
-          row.innerHTML = `
-            <div class="subject-bar-meta">
-              <span>${catName} (${catDone}/${catTasks} compiti)</span>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:12px; color:var(--text-muted);">
-                  Reale: <strong>${TaskTimer.formatMinutesHuman(catAct)}</strong> | Stima: ${TaskTimer.formatMinutesHuman(catEst)}
-                </span>
-                ${diffBadge}
+          if (catTasks === 0) {
+            row.innerHTML = `
+              <div class="subject-bar-meta">
+                <span>${catName} (0 compiti)</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:12px; color:var(--text-muted); font-style:italic;">
+                    Nessun compito registrato
+                  </span>
+                </div>
               </div>
-            </div>
-            <div class="subject-bar-tracks" style="margin-bottom: 4px;" title="Tempo Effettivo: ${catAct}m">
-              <div class="bar-act-fill" style="width: ${Math.max(4, actPct)}%; background: ${catColor};"></div>
-            </div>
-            <div class="subject-bar-tracks" style="height: 6px; background: #e2e8f0;" title="Tempo Stimato: ${catEst}m">
-              <div class="bar-est-fill" style="width: ${Math.max(4, estPct)}%;"></div>
-            </div>
-          `;
+              <div class="subject-bar-tracks" style="height: 6px; background: #f1f5f9;" title="Nessuna attività registrata per questa materia nel periodo">
+                <div class="bar-act-fill" style="width: 0%; background: ${catColor};"></div>
+              </div>
+            `;
+          } else {
+            row.innerHTML = `
+              <div class="subject-bar-meta">
+                <span>${catName} (${catDone}/${catTasks} compiti)</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:12px; color:var(--text-muted);">
+                    Reale: <strong>${TaskTimer.formatMinutesHuman(catAct)}</strong> | Stima: ${TaskTimer.formatMinutesHuman(catEst)}
+                  </span>
+                  ${diffBadge}
+                </div>
+              </div>
+              <div class="subject-bar-tracks" style="margin-bottom: 4px;" title="Tempo Effettivo: ${catAct}m">
+                <div class="bar-act-fill" style="width: ${Math.max(4, actPct)}%; background: ${catColor};"></div>
+              </div>
+              <div class="subject-bar-tracks" style="height: 6px; background: #e2e8f0;" title="Tempo Stimato: ${catEst}m">
+                <div class="bar-est-fill" style="width: ${Math.max(4, estPct)}%;"></div>
+              </div>
+            `;
+          }
 
           barsContainer.appendChild(row);
         });
       }
     }
 
-    // 3. Compiti con maggiore scostamento (Alert genitore)
+    // 3. Compiti con maggiore scostamento (Alert genitore per difficoltà o ritardi)
     const overList = document.getElementById("overtimeTasksList");
     if (overList) {
       overList.innerHTML = "";
@@ -405,9 +434,15 @@ const StatsDashboard = {
 
           item.innerHTML = `
             <div>
-              <div class="overtime-title">${task.task_title || 'Compito'}</div>
-              <div class="overtime-sub">
-                ${task.category_name || ''} • Evento: <strong>${task.event_title || ''}</strong> (${task.event_date || ''})
+              <div class="overtime-title" style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:14px; flex-shrink:0;">⚠️</span>
+                <span>${task.task_title || 'Compito'}</span>
+              </div>
+              <div class="overtime-sub" style="margin-top:2px;">
+                <span style="background:#eff6ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px;">
+                  ${task.category_name || 'Generale'}
+                </span>
+                ${task.event_date ? `<span style="margin-left: 6px; font-size:11px; color:var(--text-muted);">Data: <strong>${task.event_date}</strong></span>` : ''}
               </div>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
@@ -415,7 +450,7 @@ const StatsDashboard = {
                 <div>Impiegato: <strong>${task.actual_minutes || 0}m</strong></div>
                 <div class="text-muted">Stima: ${task.estimated_minutes || 0}m</div>
               </div>
-              <span class="overtime-tag" style="background:${isOver ? '#fee2e2' : '#dcfce7'}; color:${isOver ? '#b91c1c' : '#166534'};">
+              <span class="overtime-tag" style="background:${isOver ? '#fee2e2' : '#dcfce7'}; color:${isOver ? '#b91c1c' : '#166534'}; font-weight:800;">
                 ${isOver ? `+${diffVal}m` : `${diffVal}m`}
               </span>
             </div>

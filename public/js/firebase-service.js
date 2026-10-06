@@ -650,19 +650,52 @@ const FirebaseService = {
   async getStats(startDate = null, endDate = null) {
     await this.init();
     try {
-      let query = this.db.collection("todo_items");
-      if (startDate) query = query.where("date_str", ">=", startDate);
-      if (endDate) query = query.where("date_str", "<=", endDate);
+      // 1. Recupera tutte le materie presenti nell'orario scolastico (timetable_slots)
+      const slotsSnap = await this.db.collection("timetable_slots").get();
+      const bySubject = {};
 
-      const snap = await query.get();
+      slotsSnap.forEach(doc => {
+        const d = doc.data();
+        const rawName = (d.subject_name || "").trim();
+        if (rawName) {
+          const key = rawName.toLowerCase();
+          if (!bySubject[key]) {
+            const catDef = this.defaultCategories.find(dc => dc.name.toLowerCase() === key);
+            bySubject[key] = {
+              name: rawName,
+              color: d.category_color || (catDef ? catDef.color : "#3b82f6"),
+              icon: d.category_icon || (catDef ? catDef.icon : "📚"),
+              tasks_count: 0,
+              completed_count: 0,
+              estimated_minutes: 0,
+              actual_minutes: 0,
+              in_timetable: true
+            };
+          }
+        }
+      });
+
+      // 2. Recupera tutti i compiti da todo_items
+      const snap = await this.db.collection("todo_items").get();
       let totalTasks = 0;
       let completedTasks = 0;
       let totalEst = 0;
       let totalAct = 0;
-      const bySubject = {};
+      const topDeviations = [];
+
+      const isDateInRange = (dStr) => {
+        if (!startDate && !endDate) return true;
+        if (!dStr) return true; // Include anche compiti privi di data esplicita
+        if (startDate && dStr < startDate) return false;
+        if (endDate && dStr > endDate) return false;
+        return true;
+      };
 
       snap.forEach(doc => {
         const d = doc.data();
+        const taskDate = d.date_str || "";
+        if (!isDateInRange(taskDate)) return;
+
         totalTasks++;
         if (d.completed) completedTasks++;
         const est = parseInt(d.estimated_minutes || 0);
@@ -670,33 +703,81 @@ const FirebaseService = {
         totalEst += est;
         totalAct += act;
 
-        const sub = d.subject_name || "Generale";
-        if (!bySubject[sub]) {
-          bySubject[sub] = { name: sub, tasks_count: 0, completed_count: 0, estimated_minutes: 0, actual_minutes: 0 };
+        const rawSub = (d.subject_name || "").trim();
+        const subKey = rawSub ? rawSub.toLowerCase() : "generale";
+        const displayName = rawSub || "Generale";
+
+        if (!bySubject[subKey]) {
+          const catDef = this.defaultCategories.find(dc => dc.name.toLowerCase() === subKey);
+          bySubject[subKey] = {
+            name: displayName,
+            color: catDef ? catDef.color : (d.category_color || "#6366f1"),
+            icon: catDef ? catDef.icon : (d.category_icon || "✏️"),
+            tasks_count: 0,
+            completed_count: 0,
+            estimated_minutes: 0,
+            actual_minutes: 0,
+            in_timetable: false
+          };
         }
-        bySubject[sub].tasks_count++;
-        if (d.completed) bySubject[sub].completed_count++;
-        bySubject[sub].estimated_minutes += est;
-        bySubject[sub].actual_minutes += act;
+
+        bySubject[subKey].tasks_count++;
+        if (d.completed) bySubject[subKey].completed_count++;
+        bySubject[subKey].estimated_minutes += est;
+        bySubject[subKey].actual_minutes += act;
+
+        // Scostamento / Alert: ha impiegato più tempo del previsto (act > est)
+        const diff = act - est;
+        if (act > 0 && est > 0 && diff > 0) {
+          topDeviations.push({
+            id: doc.id,
+            task_title: d.title || "Compito",
+            category_name: bySubject[subKey].name,
+            event_title: bySubject[subKey].name,
+            event_date: taskDate,
+            actual_minutes: act,
+            estimated_minutes: est,
+            diff_minutes: diff,
+            completed: !!d.completed
+          });
+        }
       });
 
-      const catList = Object.values(bySubject).map((c, idx) => {
-        const catDef = this.defaultCategories.find(dc => dc.name.toLowerCase() === c.name.toLowerCase());
-        const color = catDef ? catDef.color : "#3b82f6";
-        const icon = catDef ? catDef.icon : "📚";
-        return {
-          id: idx + 1,
-          name: c.name,
-          category_name: c.name,
-          color: color,
-          category_color: color,
-          icon: icon,
-          category_icon: icon,
-          tasks_count: c.tasks_count,
-          completed_count: c.completed_count,
-          estimated_minutes: c.estimated_minutes,
-          actual_minutes: c.actual_minutes
-        };
+      // Ordina gli alert di scostamento dal più alto al più basso
+      topDeviations.sort((a, b) => b.diff_minutes - a.diff_minutes);
+
+      // Costruisci lista materie / categorie
+      const catList = Object.values(bySubject).map((c, idx) => ({
+        id: idx + 1,
+        name: c.name,
+        category_name: c.name,
+        color: c.color,
+        category_color: c.color,
+        icon: c.icon,
+        category_icon: c.icon,
+        tasks_count: c.tasks_count,
+        completed_count: c.completed_count,
+        estimated_minutes: c.estimated_minutes,
+        actual_minutes: c.actual_minutes,
+        in_timetable: !!c.in_timetable
+      }));
+
+      // Ordina le categorie:
+      // 1. Minuti effettivi reali (chi ha richiesto più tempo reale effettivo)
+      // 2. Minuti stimati (chi ha il carico stimato maggiore)
+      // 3. Numero di compiti
+      // 4. Ordine alfabetico per le restanti materie
+      catList.sort((a, b) => {
+        if (b.actual_minutes !== a.actual_minutes) {
+          return b.actual_minutes - a.actual_minutes;
+        }
+        if (b.estimated_minutes !== a.estimated_minutes) {
+          return b.estimated_minutes - a.estimated_minutes;
+        }
+        if (b.tasks_count !== a.tasks_count) {
+          return b.tasks_count - a.tasks_count;
+        }
+        return a.name.localeCompare(b.name, "it", { sensitivity: "base" });
       });
 
       return {
@@ -709,6 +790,7 @@ const FirebaseService = {
             total_actual_minutes: totalAct
           },
           by_category: catList,
+          top_deviations: topDeviations,
           daily_history: []
         }
       };

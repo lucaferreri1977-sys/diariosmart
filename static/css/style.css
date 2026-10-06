@@ -1305,11 +1305,12 @@ body.app-body {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 18px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   gap: 14px;
   box-shadow: var(--shadow-sm);
+  min-width: 0;
 }
 
 .kpi-icon {
@@ -1320,6 +1321,7 @@ body.app-body {
   align-items: center;
   justify-content: center;
   font-size: 22px;
+  flex-shrink: 0;
 }
 
 .bg-blue { background: #dbeafe; color: #1e40af; }
@@ -1327,29 +1329,45 @@ body.app-body {
 .bg-amber { background: #fef3c7; color: #92400e; }
 .bg-purple { background: #f3e8ff; color: #6b21a8; }
 
+.kpi-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .kpi-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-value-row {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-top: 2px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 3px;
+  min-width: 0;
 }
 
 .kpi-value {
   font-size: 22px;
   font-weight: 800;
   color: var(--text-main);
+  white-space: nowrap !important;
+  line-height: 1.15;
 }
 
 .kpi-sub {
   font-size: 12px;
   color: var(--text-muted);
+  line-height: 1.25;
 }
 
 .stats-two-col {
@@ -4302,6 +4320,7 @@ body.app-body {
     font-size: 14px !important;
     font-weight: 800 !important;
     line-height: 1.2 !important;
+    white-space: nowrap !important;
   }
 
   .kpi-sub {

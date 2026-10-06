@@ -700,6 +700,7 @@ def get_parent_stats(start_date: Optional[str] = None, end_date: Optional[str] =
             LEFT JOIN categories c ON e.category_id = c.id
             WHERE e.event_date >= ? AND e.event_date <= ? {user_filter}
               AND ti.actual_minutes > 0
+              AND (ti.actual_minutes - ti.estimated_minutes) > 0
             ORDER BY (ti.actual_minutes - ti.estimated_minutes) DESC
             LIMIT 6
         """, tuple(params))
