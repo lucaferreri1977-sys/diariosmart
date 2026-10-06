@@ -189,6 +189,15 @@ const FirebaseService = {
   async updateTimetableSlot(slotId, slotData) {
     await this.init();
     try {
+      const slotRef = this.db.collection("timetable_slots").doc(String(slotId));
+      let oldName = null;
+      if (slotData.subject_name !== undefined) {
+        const oldSnap = await slotRef.get();
+        if (oldSnap.exists) {
+          oldName = oldSnap.data().subject_name;
+        }
+      }
+
       const updateObj = {};
       if (slotData.subject_name !== undefined) {
         updateObj.subject_name = slotData.subject_name;
@@ -202,7 +211,25 @@ const FirebaseService = {
       if (slotData.category_color !== undefined) updateObj.category_color = slotData.category_color;
       updateObj.updated_at = new Date().toISOString();
 
-      await this.db.collection("timetable_slots").doc(String(slotId)).update(updateObj);
+      await slotRef.update(updateObj);
+
+      if (oldName && slotData.subject_name && oldName.toLowerCase().trim() !== slotData.subject_name.toLowerCase().trim()) {
+        const oldNameLower = oldName.toLowerCase().trim();
+        const todoSnap = await this.db.collection("todo_items").get();
+        const batch = this.db.batch();
+        let count = 0;
+        todoSnap.forEach(doc => {
+          const d = doc.data();
+          if (String(d.event_id) === String(slotId) || (d.subject_name && d.subject_name.toLowerCase().trim() === oldNameLower)) {
+            batch.update(doc.ref, { subject_name: slotData.subject_name });
+            count++;
+          }
+        });
+        if (count > 0) {
+          await batch.commit();
+        }
+      }
+
       return { ok: true };
     } catch (err) {
       console.error("Firebase updateTimetableSlot errore:", err);
