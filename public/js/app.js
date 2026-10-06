@@ -371,8 +371,26 @@ const App = {
       saveBtn.textContent = "Salvataggio...";
     }
 
+    const editSlotId = document.getElementById("subjectEditSlotId")?.value;
+    const editEventId = document.getElementById("subjectEditEventId")?.value;
+
     try {
-      if (isRecurring) {
+      if (editSlotId) {
+        await API.updateTimetableSlot(editSlotId, {
+          day_of_week: dayOfWeek,
+          subject_name: name,
+          start_time: startTime,
+          end_time: endTime
+        });
+        this.showToast(`Materia "${name}" aggiornata con successo!`, "✏️");
+      } else if (editEventId) {
+        await API.updateEvent(editEventId, {
+          title: name,
+          start_time: startTime,
+          end_time: endTime
+        });
+        this.showToast(`Materia "${name}" aggiornata con successo!`, "✏️");
+      } else if (isRecurring) {
         await API.addTimetableSlot({
           day_of_week: dayOfWeek,
           subject_name: name,

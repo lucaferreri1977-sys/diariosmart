@@ -186,6 +186,30 @@ const FirebaseService = {
     }
   },
 
+  async updateTimetableSlot(slotId, slotData) {
+    await this.init();
+    try {
+      const updateObj = {};
+      if (slotData.subject_name !== undefined) {
+        updateObj.subject_name = slotData.subject_name;
+        updateObj.category_name = slotData.subject_name;
+      }
+      if (slotData.day_of_week !== undefined) updateObj.day_of_week = parseInt(slotData.day_of_week);
+      if (slotData.period_number !== undefined) updateObj.period_number = parseInt(slotData.period_number);
+      if (slotData.start_time !== undefined) updateObj.start_time = slotData.start_time;
+      if (slotData.end_time !== undefined) updateObj.end_time = slotData.end_time;
+      if (slotData.room !== undefined) updateObj.room = slotData.room;
+      if (slotData.category_color !== undefined) updateObj.category_color = slotData.category_color;
+      updateObj.updated_at = new Date().toISOString();
+
+      await this.db.collection("timetable_slots").doc(String(slotId)).update(updateObj);
+      return { ok: true };
+    } catch (err) {
+      console.error("Firebase updateTimetableSlot errore:", err);
+      throw err;
+    }
+  },
+
   async deleteTimetableSlot(slotId) {
     await this.init();
     try {

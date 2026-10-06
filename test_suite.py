@@ -186,6 +186,40 @@ def run_tests():
     assert "Informatica Applicata" not in wed_subs_after, "Materia ancora presente dopo eliminazione"
     print("✅ Test 7 superato! Aggiunta ed eliminazione materia verificate con successo.")
 
+    # Test 8: Modifica materia e modifica parametri compito
+    print("Test 8: Modifica materia e modifica parametri compito...")
+    slot_to_edit = database.save_timetable_slot(
+        user_id=c_user["id"],
+        day_of_week=4, # Giovedì
+        subject_name="Fisica Generale",
+        start_time="09:00",
+        end_time="10:00"
+    )
+    edit_slot_ok = database.update_timetable_slot(
+        slot_id=slot_to_edit,
+        user_id=c_user["id"],
+        subject_name="Fisica Applicata",
+        start_time="09:15",
+        end_time="10:15"
+    )
+    assert edit_slot_ok == True, "Modifica materia fallita"
+    daily_thu = database.get_daily_schedule(c_user["id"], "2026-10-08")
+    thu_subs = {s["subject_name"]: s for s in daily_thu["subjects"]}
+    assert "Fisica Applicata" in thu_subs, "Materia modificata non trovata"
+    assert thu_subs["Fisica Applicata"]["start_time"] == "09:15", "Orario inizio non aggiornato"
+
+    # Modifica compito rapido
+    item_to_edit = database.quick_add_task_to_event(thu_subs["Fisica Applicata"]["event_id"], "Esercizi cap 3", 20)
+    edit_item_ok = database.update_todo_item(
+        item_id=item_to_edit["id"],
+        title="Esercizi cap 3 e 4 completi",
+        estimated_minutes=35
+    )
+    assert edit_item_ok == True, "Modifica compito fallita"
+    database.delete_todo_item(item_to_edit["id"])
+    database.delete_timetable_slot(slot_to_edit, user_id=c_user["id"])
+    print("✅ Test 8 superato! Modifica materia e modifica compito verificate con successo.")
+
     # Cleanup evento di test 1, slot di test 6 e compito rapido di test 6
     database.delete_todo_item(quick_item["id"])
     database.delete_timetable_slot(test_slot_id, user_id=c_user["id"])

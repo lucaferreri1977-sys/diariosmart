@@ -807,6 +807,41 @@ def delete_timetable_slot(slot_id: int, user_id: Optional[int] = None) -> bool:
         conn.commit()
         return deleted
 
+def update_timetable_slot(slot_id: int, user_id: Optional[int] = None, **kwargs) -> bool:
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT user_id, subject_name FROM timetable_slots WHERE id = ?", (slot_id,))
+        old_slot = cursor.fetchone()
+        if not old_slot:
+            return False
+
+        fields = []
+        params = []
+        for key in ["day_of_week", "period_number", "category_id", "subject_name", "start_time", "end_time", "room"]:
+            if key in kwargs and kwargs[key] is not None:
+                fields.append(f"{key} = ?")
+                params.append(kwargs[key])
+        if not fields:
+            return False
+
+        query = f"UPDATE timetable_slots SET {', '.join(fields)} WHERE id = ?"
+        params.append(slot_id)
+        if user_id:
+            query += " AND user_id = ?"
+            params.append(user_id)
+
+        cursor.execute(query, tuple(params))
+        updated = cursor.rowcount > 0
+
+        new_name = kwargs.get("subject_name")
+        if updated and new_name and old_slot["subject_name"] != new_name:
+            cursor.execute(
+                "UPDATE events SET title = ? WHERE assigned_to_user_id = ? AND LOWER(TRIM(title)) = LOWER(TRIM(?))",
+                (new_name, old_slot["user_id"], old_slot["subject_name"])
+            )
+        conn.commit()
+        return updated
+
 def save_full_timetable(user_id: int, slots: List[Dict[str, Any]]) -> bool:
     """Salva l'intera griglia oraria dell'utente."""
     with get_connection() as conn:

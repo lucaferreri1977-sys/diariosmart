@@ -448,6 +448,20 @@ const API = {
     });
   },
 
+  async updateTimetableSlot(slotId, slotData) {
+    if (window.FirebaseService && window.FirebaseService.isReady) {
+      try {
+        return await window.FirebaseService.updateTimetableSlot(slotId, slotData);
+      } catch (e) {
+        console.warn("Fallback su updateTimetableSlot API:", e);
+      }
+    }
+    return await this.request(`/api/timetable/${slotId}`, {
+      method: "PUT",
+      body: JSON.stringify(slotData)
+    });
+  },
+
   async deleteTimetableSlot(slotId) {
     if (window.FirebaseService && window.FirebaseService.isReady) {
       try {

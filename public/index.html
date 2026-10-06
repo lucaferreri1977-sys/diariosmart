@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>DiarioSmart - Diario & Calendario Scolastico</title>
-  <link rel="stylesheet" href="/css/style.css?v=6.6">
+  <link rel="stylesheet" href="/css/style.css?v=6.9">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -581,6 +581,8 @@
         <button type="button" class="modal-close-btn" data-close-modal="subjectModal" onclick="window.closeSubjectModal()">✕</button>
       </div>
       <form id="subjectForm" class="modal-form">
+        <input type="hidden" id="subjectEditSlotId" value="" />
+        <input type="hidden" id="subjectEditEventId" value="" />
         <div class="modal-body">
           <div class="form-group">
             <label for="subjectNameInput">Nome Materia *</label>
@@ -640,25 +642,83 @@
     </div>
   </div>
 
+  <!-- ==================== MODALE 7: MODIFICA COMPITO ==================== -->
+  <div id="taskEditModal" class="modal-backdrop hidden" onclick="if(event.target === this) window.closeTaskEditModal()">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="taskEditModalTitle">✏️ Modifica Compito</h2>
+        <button type="button" class="modal-close-btn" data-close-modal="taskEditModal" onclick="window.closeTaskEditModal()">✕</button>
+      </div>
+      <form id="taskEditForm" class="modal-form">
+        <input type="hidden" id="editTaskId" value="" />
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="editTaskTitleInput">Descrizione Compito *</label>
+            <input type="text" id="editTaskTitleInput" class="form-control" placeholder="es. Esercizi pag 45 n 1,2..." required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col">
+              <label for="editTaskEstSelect">⏱️ Tempo Stimato</label>
+              <select id="editTaskEstSelect" class="form-select">
+                <option value="1">1 minuto</option>
+                <option value="5">5 minuti</option>
+                <option value="10">10 minuti</option>
+                <option value="15">15 minuti</option>
+                <option value="20">20 minuti</option>
+                <option value="25">25 minuti (Pomodoro)</option>
+                <option value="30">30 minuti</option>
+                <option value="45">45 minuti</option>
+                <option value="60">60 minuti (1 ora)</option>
+                <option value="90">90 minuti (1h 30m)</option>
+                <option value="120">120 minuti (2 ore)</option>
+              </select>
+            </div>
+            <div class="form-group col" id="editTaskSubjectCol">
+              <label for="editTaskSubjectSelect">📚 Materia Associata</label>
+              <select id="editTaskSubjectSelect" class="form-select">
+                <option value="">Nessuna materia specifica</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-ghost" data-close-modal="taskEditModal" onclick="window.closeTaskEditModal()">Annulla</button>
+          <button type="submit" class="btn-primary" id="btnSaveTaskEdit">Salva Modifiche</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Toast Notifiche -->
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-service.js?v=6.8"></script>
-  <script src="/js/api.js?v=6.8"></script>
-  <script src="/js/timer.js?v=6.8"></script>
-  <script src="/js/calendar.js?v=6.8"></script>
-  <script src="/js/stats.js?v=6.8"></script>
-  <script src="/js/app.js?v=6.8"></script>
+  <script src="/js/firebase-service.js?v=6.9"></script>
+  <script src="/js/api.js?v=6.9"></script>
+  <script src="/js/timer.js?v=6.9"></script>
+  <script src="/js/calendar.js?v=6.9"></script>
+  <script src="/js/stats.js?v=6.9"></script>
+  <script src="/js/app.js?v=6.9"></script>
   <script>
-    // Gestione universale e immediata apertura/chiusura modale Aggiungi Materia
+    // Gestione apertura modale Aggiungi Materia
     window.openSubjectModal = function(preselectedDow) {
       var m = document.getElementById("subjectModal");
       if (!m) return;
       m.classList.remove("hidden");
       m.style.display = "flex";
+
+      var editSlotInput = document.getElementById("subjectEditSlotId");
+      if (editSlotInput) editSlotInput.value = "";
+      var editEventInput = document.getElementById("subjectEditEventId");
+      if (editEventInput) editEventInput.value = "";
+      var titleEl = document.getElementById("subjectModalTitle");
+      if (titleEl) titleEl.textContent = "Aggiungi Materia";
+      var saveBtn = document.getElementById("btnSaveSubject");
+      if (saveBtn) saveBtn.textContent = "Salva Materia";
 
       var nameInput = document.getElementById("subjectNameInput");
       if (nameInput) {
@@ -679,6 +739,39 @@
       if (recCheck) recCheck.checked = true;
     };
 
+    // Gestione apertura modale Modifica Materia
+    window.openEditSubjectModal = function(subData) {
+      var m = document.getElementById("subjectModal");
+      if (!m) return;
+      m.classList.remove("hidden");
+      m.style.display = "flex";
+
+      var editSlotInput = document.getElementById("subjectEditSlotId");
+      if (editSlotInput) editSlotInput.value = subData.slot_id || "";
+      var editEventInput = document.getElementById("subjectEditEventId");
+      if (editEventInput) editEventInput.value = subData.event_id || "";
+      var titleEl = document.getElementById("subjectModalTitle");
+      if (titleEl) titleEl.textContent = "✏️ Modifica Materia";
+      var saveBtn = document.getElementById("btnSaveSubject");
+      if (saveBtn) saveBtn.textContent = "Salva Modifiche";
+
+      var nameInput = document.getElementById("subjectNameInput");
+      if (nameInput) {
+        nameInput.value = subData.subject_name || "";
+        setTimeout(function() { nameInput.focus(); }, 80);
+      }
+      var daySelect = document.getElementById("subjectDaySelect");
+      if (daySelect) {
+        daySelect.value = String(subData.day_of_week || 1);
+      }
+      var startInput = document.getElementById("subjectStartTimeInput");
+      if (startInput) startInput.value = subData.start_time || "08:00";
+      var endInput = document.getElementById("subjectEndTimeInput");
+      if (endInput) endInput.value = subData.end_time || "09:00";
+      var recCheck = document.getElementById("subjectRecurringCheck");
+      if (recCheck) recCheck.checked = true;
+    };
+
     window.closeSubjectModal = function() {
       var m = document.getElementById("subjectModal");
       if (m) {
@@ -686,6 +779,122 @@
         m.style.display = "none";
       }
     };
+
+    // Gestione apertura modale Modifica Compito
+    window.openTaskEditModal = function(item, sched) {
+      var m = document.getElementById("taskEditModal");
+      if (!m) return;
+      m.classList.remove("hidden");
+      m.style.display = "flex";
+
+      var idInput = document.getElementById("editTaskId");
+      if (idInput) idInput.value = item.id;
+
+      var titleInput = document.getElementById("editTaskTitleInput");
+      if (titleInput) {
+        titleInput.value = item.title || "";
+        setTimeout(function() { titleInput.focus(); }, 80);
+      }
+
+      var estSelect = document.getElementById("editTaskEstSelect");
+      if (estSelect) {
+        var est = item.estimated_minutes || 25;
+        var exists = Array.from(estSelect.options).some(function(opt) { return opt.value == est; });
+        if (!exists && est > 0) {
+          var opt = document.createElement("option");
+          opt.value = est;
+          opt.textContent = est + " minuti";
+          estSelect.appendChild(opt);
+        }
+        estSelect.value = String(est);
+      }
+
+      var subSelect = document.getElementById("editTaskSubjectSelect");
+      if (subSelect) {
+        subSelect.innerHTML = '<option value="">Nessuna materia specifica</option>';
+        var subjects = (sched && sched.subjects) || (window.Calendar && window.Calendar._lastSchedule && window.Calendar._lastSchedule.subjects) || [];
+        var foundMatch = false;
+        subjects.forEach(function(s) {
+          var opt = document.createElement("option");
+          opt.value = s.subject_name;
+          opt.setAttribute("data-event-id", s.event_id || "");
+          opt.textContent = s.subject_name + " (" + s.start_time + " - " + s.end_time + ")";
+          if (item.subject_name && s.subject_name.toLowerCase().trim() === item.subject_name.toLowerCase().trim()) {
+            opt.selected = true;
+            foundMatch = true;
+          }
+          subSelect.appendChild(opt);
+        });
+
+        if (!foundMatch && item.subject_name) {
+          var curOpt = document.createElement("option");
+          curOpt.value = item.subject_name;
+          curOpt.textContent = item.subject_name;
+          curOpt.selected = true;
+          subSelect.appendChild(curOpt);
+        }
+      }
+    };
+
+    window.closeTaskEditModal = function() {
+      var m = document.getElementById("taskEditModal");
+      if (m) {
+        m.classList.add("hidden");
+        m.style.display = "none";
+      }
+    };
+
+    // Listener invio form modifica compito
+    document.addEventListener("DOMContentLoaded", function() {
+      var taskForm = document.getElementById("taskEditForm");
+      if (taskForm) {
+        taskForm.addEventListener("submit", async function(e) {
+          e.preventDefault();
+          var taskId = document.getElementById("editTaskId")?.value;
+          var title = document.getElementById("editTaskTitleInput")?.value.trim();
+          var estMin = parseInt(document.getElementById("editTaskEstSelect")?.value || "25");
+          var subSelect = document.getElementById("editTaskSubjectSelect");
+          var selectedSubName = subSelect?.value || "";
+          var selectedEventId = subSelect?.options[subSelect.selectedIndex]?.getAttribute("data-event-id") || null;
+
+          if (!title) return;
+
+          var saveBtn = document.getElementById("btnSaveTaskEdit");
+          if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Salvataggio...";
+          }
+
+          try {
+            var updateData = {
+              title: title,
+              estimated_minutes: estMin
+            };
+            if (selectedSubName) updateData.subject_name = selectedSubName;
+            if (selectedEventId) updateData.event_id = selectedEventId;
+
+            await window.API.updateTodoItem(taskId, updateData);
+            window.closeTaskEditModal();
+            if (typeof window.App?.showToast === "function") {
+              window.App.showToast("Compito modificato con successo!", "✏️");
+            }
+            if (window.Calendar) {
+              await window.Calendar.renderDailySchedule();
+              if (window.Calendar.currentView === "week") {
+                window.Calendar.renderWeekView();
+              }
+            }
+          } catch (err) {
+            alert("Errore durante la modifica del compito: " + err.message);
+          } finally {
+            if (saveBtn) {
+              saveBtn.disabled = false;
+              saveBtn.textContent = "Salva Modifiche";
+            }
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>

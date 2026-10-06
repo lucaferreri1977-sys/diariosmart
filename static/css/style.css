@@ -2289,11 +2289,35 @@ body.app-body {
   padding: 4px;
   border-radius: 4px;
   transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .btn-task-del:hover {
   color: var(--danger);
   background: #fee2e2;
+}
+
+.btn-task-edit {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.btn-task-edit:hover {
+  color: var(--primary);
+  background: #e0e7ff;
 }
 
 /* Box Aggiunta Rapida Compito */
@@ -2946,6 +2970,35 @@ body.app-body {
   color: #b91c1c;
   transform: translateY(-1px);
   box-shadow: 0 2px 5px rgba(220, 38, 38, 0.15);
+}
+
+.btn-edit-subject {
+  background: #ffffff;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
+  border-radius: 8px;
+  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  white-space: nowrap;
+  line-height: 1;
+  flex-shrink: 0;
+  box-shadow: 0 1px 2px rgba(37, 99, 235, 0.05);
+}
+
+.btn-edit-subject:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.15);
 }
 
 .parent-today-subjects-grid {
@@ -4128,7 +4181,8 @@ body.app-body {
     gap: 6px;
   }
 
-  .btn-delete-subject {
+  .btn-delete-subject,
+  .btn-edit-subject {
     padding: 4px 8px !important;
     font-size: 11px !important;
     gap: 4px !important;

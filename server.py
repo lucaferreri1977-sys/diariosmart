@@ -468,6 +468,23 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
             )
             return self.send_json(200, {"ok": success})
 
+        # Modifica Slot Orario: PUT /api/timetable/:id
+        if path.startswith("/api/timetable/") and path.count("/") == 3:
+            if user["role"] != "parent":
+                return self.send_json(403, {"ok": False, "error": "Solo il genitore può modificare l'orario"})
+            slot_id = int(path.split("/")[3])
+            success = database.update_timetable_slot(
+                slot_id=slot_id,
+                day_of_week=body.get("day_of_week"),
+                period_number=body.get("period_number"),
+                category_id=body.get("category_id"),
+                subject_name=body.get("subject_name"),
+                start_time=body.get("start_time"),
+                end_time=body.get("end_time"),
+                room=body.get("room")
+            )
+            return self.send_json(200, {"ok": success})
+
         # Modifica Categoria: PUT /api/categories/:id
         if path.startswith("/api/categories/") and path.count("/") == 3:
             if user["role"] != "parent":
