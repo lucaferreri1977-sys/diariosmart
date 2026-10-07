@@ -16,9 +16,9 @@ const StatsDashboard = {
     const refreshBtn = document.getElementById("btnRefreshStats");
     refreshBtn?.addEventListener("click", () => this.refresh());
 
-    if (this.selectedDayOfWeek === null || this.selectedDayOfWeek > 5 || this.selectedDayOfWeek < 1) {
+    if (this.selectedDayOfWeek === null || this.selectedDayOfWeek > 7 || this.selectedDayOfWeek < 1) {
       const dow = new Date().getDay();
-      this.selectedDayOfWeek = (dow === 0 || dow === 6) ? 1 : dow;
+      this.selectedDayOfWeek = (dow === 0) ? 7 : dow;
     }
   },
 
@@ -26,12 +26,7 @@ const StatsDashboard = {
     const today = new Date();
     const todayDow = today.getDay() === 0 ? 7 : today.getDay();
     const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0);
-    if (todayDow >= 6) {
-      // Nel weekend la settimana scolastica da pianificare è quella imminente di Lunedì
-      monday.setDate(today.getDate() + (8 - todayDow));
-    } else {
-      monday.setDate(today.getDate() - (todayDow - 1));
-    }
+    monday.setDate(today.getDate() - (todayDow - 1));
 
     const targetDate = new Date(monday);
     targetDate.setDate(monday.getDate() + (this.selectedDayOfWeek - 1));
@@ -39,7 +34,7 @@ const StatsDashboard = {
   },
 
   selectDay(dow) {
-    if (dow < 1 || dow > 5) dow = 1;
+    if (dow < 1 || dow > 7) dow = 1;
     this.selectedDayOfWeek = dow;
 
     // Aggiornamento immediato visivo tab (feedback istantaneo al click)
@@ -66,9 +61,9 @@ const StatsDashboard = {
   },
 
   async loadSelectedDay() {
-    if (this.selectedDayOfWeek === null || this.selectedDayOfWeek > 5 || this.selectedDayOfWeek < 1) {
+    if (this.selectedDayOfWeek === null || this.selectedDayOfWeek > 7 || this.selectedDayOfWeek < 1) {
       const dow = new Date().getDay();
-      this.selectedDayOfWeek = (dow === 0 || dow === 6) ? 1 : dow;
+      this.selectedDayOfWeek = (dow === 0) ? 7 : dow;
     }
 
     const targetDate = this.getTargetDateForSelectedDow();
@@ -155,7 +150,9 @@ const StatsDashboard = {
       { dow: 2, name: "Martedì" },
       { dow: 3, name: "Mercoledì" },
       { dow: 4, name: "Giovedì" },
-      { dow: 5, name: "Venerdì" }
+      { dow: 5, name: "Venerdì" },
+      { dow: 6, name: "Sabato" },
+      { dow: 7, name: "Domenica" }
     ];
 
     days.forEach(d => {
@@ -202,10 +199,10 @@ const StatsDashboard = {
       container.innerHTML = `
         <div style="grid-column: 1 / -1; padding: 36px 20px; text-align: center; background: #f8fafc; border-radius: 14px; border: 2px dashed #cbd5e1;">
           <span style="font-size: 36px; display: block; margin-bottom: 8px;">🎒</span>
-          <p style="font-weight: 800; font-size: 15px; color: var(--text-main); margin-bottom: 6px;">Nessuna materia in orario per ${sched.day_name || 'questo giorno'}</p>
-          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Configura le materie scolastiche di ${sched.day_name || 'questo giorno'} per assegnare compiti a Giulio.</p>
+          <p style="font-weight: 800; font-size: 15px; color: var(--text-main); margin-bottom: 6px;">Nessuna materia o evento in orario per ${sched.day_name || 'questo giorno'}</p>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Configura le materie o gli eventi di ${sched.day_name || 'questo giorno'} per organizzare le attività e assegnare compiti.</p>
           <button type="button" class="btn-primary" onclick="window.openSubjectModal(${this.selectedDayOfWeek})" style="display: inline-flex; align-items: center; gap: 8px; margin: 0 auto;">
-            <span>➕ Aggiungi Materia per ${sched.day_name || 'questo giorno'}</span>
+            <span>➕ Aggiungi Materia o Evento per ${sched.day_name || 'questo giorno'}</span>
           </button>
         </div>
       `;

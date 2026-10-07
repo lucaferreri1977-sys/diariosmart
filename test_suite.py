@@ -220,6 +220,22 @@ def run_tests():
     database.delete_timetable_slot(slot_to_edit, user_id=c_user["id"])
     print("✅ Test 8 superato! Modifica materia e modifica compito verificate con successo.")
 
+    # Test 9: Configurazione materia o evento nel weekend (Domenica)
+    print("Test 9: Configurazione materia o evento nel weekend (Domenica)...")
+    sun_slot_id = database.save_timetable_slot(
+        user_id=c_user["id"],
+        day_of_week=7, # Domenica
+        subject_name="Corso Musica / Evento Domenicale",
+        start_time="10:00",
+        end_time="11:30"
+    )
+    assert sun_slot_id > 0, "Salvataggio slot Domenica fallito"
+    sun_daily = database.get_daily_schedule(c_user["id"], "2026-10-11") # Domenica
+    assert sun_daily["day_name"] == "Domenica"
+    assert any(s["subject_name"] == "Corso Musica / Evento Domenicale" for s in sun_daily["subjects"]), "Slot Domenica non trovato"
+    database.delete_timetable_slot(sun_slot_id, user_id=c_user["id"])
+    print("✅ Test 9 superato! Configurazione materie ed eventi per Domenica verificata con successo.")
+
     # Cleanup evento di test 1, slot di test 6 e compito rapido di test 6
     database.delete_todo_item(quick_item["id"])
     database.delete_timetable_slot(test_slot_id, user_id=c_user["id"])

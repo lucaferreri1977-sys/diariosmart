@@ -317,14 +317,23 @@ const App = {
   openSubjectModal(preselectedDow) {
     this.openModal("subjectModal");
 
+    const editSlotInput = document.getElementById("subjectEditSlotId");
+    if (editSlotInput) editSlotInput.value = "";
+    const editEventInput = document.getElementById("subjectEditEventId");
+    if (editEventInput) editEventInput.value = "";
+    const titleEl = document.getElementById("subjectModalTitle");
+    if (titleEl) titleEl.textContent = "Aggiungi Materia o Evento";
+    const saveBtn = document.getElementById("btnSaveSubject");
+    if (saveBtn) saveBtn.textContent = "Salva Materia o Evento";
+
     const nameInput = document.getElementById("subjectNameInput");
     if (nameInput) nameInput.value = "";
     
-    // Preseleziona il giorno passato o attualmente visualizzato nella dashboard o oggi (Lunedì - Venerdì)
+    // Preseleziona il giorno passato o attualmente visualizzato nella dashboard o oggi (Lunedì - Domenica)
     const daySelect = document.getElementById("subjectDaySelect");
     if (daySelect) {
       let currentDay = preselectedDow || (window.StatsDashboard && window.StatsDashboard.selectedDayOfWeek) || (window.Calendar && window.Calendar.currentDate ? (window.Calendar.currentDate.getDay() === 0 ? 7 : window.Calendar.currentDate.getDay()) : 1);
-      if (currentDay < 1 || currentDay > 5) currentDay = 1;
+      if (currentDay < 1 || currentDay > 7) currentDay = 1;
       daySelect.value = String(currentDay);
     }
     
@@ -345,7 +354,7 @@ const App = {
   async handleSubjectFormSubmit(e) {
     e.preventDefault();
     if (this.currentUser?.role !== "parent") {
-      alert("Solo il profilo genitore può gestire le materie.");
+      alert("Solo il profilo genitore può gestire materie ed eventi.");
       return;
     }
 
@@ -356,12 +365,12 @@ const App = {
     const isRecurring = document.getElementById("subjectRecurringCheck")?.checked !== false;
 
     if (!name) {
-      alert("Inserisci il nome della materia.");
+      alert("Inserisci il nome della materia o evento.");
       return;
     }
 
-    if (dayOfWeek < 1 || dayOfWeek > 5) {
-      alert("Le materie scolastiche possono essere configurate solo da Lunedì a Venerdì (il fine settimana non prevede lezioni).");
+    if (dayOfWeek < 1 || dayOfWeek > 7) {
+      alert("Giorno non valido (seleziona da Lunedì a Domenica).");
       return;
     }
 
@@ -382,14 +391,14 @@ const App = {
           start_time: startTime,
           end_time: endTime
         });
-        this.showToast(`Materia "${name}" aggiornata con successo!`, "✏️");
+        this.showToast(`"${name}" aggiornato con successo!`, "✏️");
       } else if (editEventId) {
         await API.updateEvent(editEventId, {
           title: name,
           start_time: startTime,
           end_time: endTime
         });
-        this.showToast(`Materia "${name}" aggiornata con successo!`, "✏️");
+        this.showToast(`"${name}" aggiornato con successo!`, "✏️");
       } else if (isRecurring) {
         await API.addTimetableSlot({
           day_of_week: dayOfWeek,
@@ -397,7 +406,7 @@ const App = {
           start_time: startTime,
           end_time: endTime
         });
-        this.showToast(`Materia "${name}" aggiunta all'orario settimanale!`, "📚");
+        this.showToast(`"${name}" aggiunto all'orario settimanale!`, "📚");
       } else {
         // Evento singolo per il giorno scelto
         const today = new Date();
@@ -411,7 +420,7 @@ const App = {
         let childUser = (this.users || []).find(u => u.role === "child" || u.username === "giulio");
         await API.createEvent({
           title: name,
-          description: `Materia programmata (${startTime} - ${endTime})`,
+          description: `Materia o evento programmato (${startTime} - ${endTime})`,
           event_date: dateIso,
           start_time: startTime,
           end_time: endTime,
@@ -420,7 +429,7 @@ const App = {
           is_recurring_weekly: false,
           repeat_weeks: 1
         });
-        this.showToast(`Materia "${name}" aggiunta come evento per ${dateIso}!`, "📅");
+        this.showToast(`"${name}" aggiunto per ${dateIso}!`, "📅");
       }
 
       window.closeSubjectModal();
@@ -432,11 +441,11 @@ const App = {
         await window.Calendar.refresh();
       }
     } catch (err) {
-      alert("Errore durante il salvataggio della materia: " + err.message);
+      alert("Errore durante il salvataggio: " + err.message);
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = "Salva Materia";
+        saveBtn.textContent = "Salva Materia o Evento";
       }
     }
   },

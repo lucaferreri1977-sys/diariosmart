@@ -274,13 +274,13 @@ const Calendar = {
         const daySubjects = day.subjects || [];
 
         if (daySubjects.length === 0 && (!day.extra_events || day.extra_events.length === 0)) {
-          if (!day.is_weekend) {
-            const emptyDiv = document.createElement("div");
-            emptyDiv.className = "week-day-empty-msg";
-            emptyDiv.style.cursor = "pointer";
-            emptyDiv.innerHTML = `<span>Nessuna materia in programma</span><br><span style="font-size:11px; color:var(--primary); font-weight:700; margin-top:4px; display:inline-block;">Apri giorno →</span>`;
-            dayBody.appendChild(emptyDiv);
-          }
+          const emptyDiv = document.createElement("div");
+          emptyDiv.className = "week-day-empty-msg";
+          emptyDiv.style.cursor = "pointer";
+          emptyDiv.innerHTML = day.is_weekend 
+            ? `<span>Nessun evento o materia</span><br><span style="font-size:11px; color:var(--primary); font-weight:700; margin-top:4px; display:inline-block;">Apri giorno →</span>`
+            : `<span>Nessuna materia in programma</span><br><span style="font-size:11px; color:var(--primary); font-weight:700; margin-top:4px; display:inline-block;">Apri giorno →</span>`;
+          dayBody.appendChild(emptyDiv);
         } else {
           // Elenco Materie con i to-do sotto ad ogni materia
           daySubjects.forEach(sub => {
@@ -659,11 +659,12 @@ const Calendar = {
     const isWeekend = (this.currentDate && (this.currentDate.getDay() === 0 || this.currentDate.getDay() === 6)) || sched.is_weekend || (sched.day_of_week === 6 || sched.day_of_week === 7);
 
     if (subjects.length === 0) {
+      const curDow = sched.day_of_week || (this.currentDate ? (this.currentDate.getDay() === 0 ? 7 : this.currentDate.getDay()) : 1);
       container.innerHTML = `
         <div style="text-align: center; padding: 32px 12px; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--border-color);">
           <span style="font-size: 32px; display: block; margin-bottom: 6px;">${isWeekend ? '🏖️' : '🎒'}</span>
-          <p style="font-size: 13px; font-weight: 700; color: var(--text-main); margin: 0;">Nessuna materia in programma per ${sched.day_name || 'questo giorno'}</p>
-          ${isWeekend ? '<p style="font-size: 12px; color: var(--text-muted); margin-top: 6px;">Fine settimana scolastico</p>' : '<button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal()" style="margin-top: 12px; font-size: 12px; padding: 6px 12px;">➕ Aggiungi Materia</button>'}
+          <p style="font-size: 13px; font-weight: 700; color: var(--text-main); margin: 0;">Nessuna materia o evento in programma per ${sched.day_name || 'questo giorno'}</p>
+          <button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal(${curDow})" style="margin-top: 12px; font-size: 12px; padding: 6px 12px;">➕ Aggiungi Materia o Evento</button>
         </div>
       `;
       return;
@@ -723,7 +724,7 @@ const Calendar = {
 
     const subjects = sched.subjects || [];
     if (subjects.length === 0) {
-      input.placeholder = `Nessuna materia in programma per ${sched.day_name || 'questo giorno'}`;
+      input.placeholder = `Nessuna materia o evento in programma per ${sched.day_name || 'questo giorno'}`;
       input.disabled = true;
       if (quickForm) quickForm.style.opacity = "0.5";
       return;
@@ -753,15 +754,16 @@ const Calendar = {
     const isWeekend = (this.currentDate && (this.currentDate.getDay() === 0 || this.currentDate.getDay() === 6)) || sched.is_weekend || (sched.day_of_week === 6 || sched.day_of_week === 7);
 
     if (subjects.length === 0) {
-      if (titleEl) titleEl.textContent = `📝 Nessuna Materia in Orario • ${sched.day_name || ''}`;
+      const curDow = sched.day_of_week || (this.currentDate ? (this.currentDate.getDay() === 0 ? 7 : this.currentDate.getDay()) : 1);
+      if (titleEl) titleEl.textContent = `📝 Nessuna Materia o Evento • ${sched.day_name || ''}`;
       container.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; background: #f8fafc; border-radius: 16px; border: 1px dashed var(--border-color);">
           <span style="font-size: 36px; display: block; margin-bottom: 8px;">${isWeekend ? '🏖️' : '🎒'}</span>
-          <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Nessuna materia in programma per ${sched.day_name || 'questo giorno'}</h4>
+          <h4 style="font-size: 15px; font-weight: 700; color: var(--text-main);">Nessuna materia o evento in programma per ${sched.day_name || 'questo giorno'}</h4>
           <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px; max-width: 380px; margin-left: auto; margin-right: auto;">
-            ${isWeekend ? 'Il sabato e la domenica non prevedono lezioni in orario scolastico.' : 'Usa le frecce ‹ › o seleziona un giorno in alto per consultare o assegnare i compiti.'}
+            ${isWeekend ? 'Aggiungi una materia o un evento per il fine settimana.' : 'Usa le frecce ‹ › o seleziona un giorno in alto per consultare o assegnare i compiti.'}
           </p>
-          ${!isWeekend ? '<button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal()" style="margin-top: 14px; font-size: 13px; padding: 7px 16px;">➕ Aggiungi Materia in orario</button>' : ''}
+          <button type="button" class="btn-primary parent-only" onclick="window.openSubjectModal(${curDow})" style="margin-top: 14px; font-size: 13px; padding: 7px 16px;">➕ Aggiungi Materia o Evento</button>
         </div>
       `;
       return;
