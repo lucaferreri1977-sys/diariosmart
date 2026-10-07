@@ -61,10 +61,10 @@ const Calendar = {
     quickForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const titleInput = document.getElementById("quickTaskTitleInput");
-      const estSelect = document.getElementById("quickTaskEstSelect");
+      const estInput = document.getElementById("quickTaskEstInput") || document.getElementById("quickTaskEstSelect");
 
       const title = titleInput?.value.trim();
-      const estMin = parseInt(estSelect?.value || 25);
+      const estMin = Math.max(1, parseInt(estInput?.value || 25) || 25);
       const dateStr = this.formatDateIso(this.currentDate);
       let eventId = this.selectedSubjectEventId;
       if (!eventId && this._lastSchedule?.subjects?.length > 0) {

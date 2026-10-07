@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>DiarioSmart - Diario & Calendario Scolastico</title>
-  <link rel="stylesheet" href="/css/style.css?v=7.5">
+  <link rel="stylesheet" href="/css/style.css?v=7.6">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -216,17 +216,11 @@
               <form id="dailyQuickTaskForm" class="daily-quick-task-bar">
                 <div class="quick-task-fields">
                   <input type="text" id="quickTaskTitleInput" class="form-control quick-title-input" placeholder="✏️ Aggiungi un compito o esercizio da fare..." required />
-                  <select id="quickTaskEstSelect" class="form-select quick-est-select" title="Tempo stimato">
-                    <option value="1">⏱️ 1m</option>
-                    <option value="5">⏱️ 5m</option>
-                    <option value="10">⏱️ 10m</option>
-                    <option value="15">⏱️ 15m</option>
-                    <option value="20">⏱️ 20m</option>
-                    <option value="25" selected>⏱️ 25m</option>
-                    <option value="30">⏱️ 30m</option>
-                    <option value="45">⏱️ 45m</option>
-                    <option value="60">⏱️ 60m</option>
-                  </select>
+                  <div class="quick-est-group" title="Tempo stimato in minuti (selezione libera)">
+                    <span class="quick-est-icon">⏱️</span>
+                    <input type="number" id="quickTaskEstInput" class="quick-est-input" min="1" max="480" value="25" placeholder="min" aria-label="Minuti stimati" />
+                    <span class="quick-est-unit">min</span>
+                  </div>
                   <button type="submit" class="btn-primary quick-add-btn">
                     <span>+ Aggiungi</span>
                   </button>
@@ -662,20 +656,11 @@
 
           <div class="form-row">
             <div class="form-group col">
-              <label for="editTaskEstSelect">⏱️ Tempo Stimato</label>
-              <select id="editTaskEstSelect" class="form-select">
-                <option value="1">1 minuto</option>
-                <option value="5">5 minuti</option>
-                <option value="10">10 minuti</option>
-                <option value="15">15 minuti</option>
-                <option value="20">20 minuti</option>
-                <option value="25">25 minuti (Pomodoro)</option>
-                <option value="30">30 minuti</option>
-                <option value="45">45 minuti</option>
-                <option value="60">60 minuti (1 ora)</option>
-                <option value="90">90 minuti (1h 30m)</option>
-                <option value="120">120 minuti (2 ore)</option>
-              </select>
+              <label for="editTaskEstInput">⏱️ Tempo Stimato</label>
+              <div class="modal-est-group">
+                <input type="number" id="editTaskEstInput" class="form-control" min="1" max="480" value="25" placeholder="es. 25" required />
+                <span class="modal-est-unit">min</span>
+              </div>
             </div>
             <div class="form-group col" id="editTaskSubjectCol">
               <label for="editTaskSubjectSelect">📚 Materia Associata</label>
@@ -700,12 +685,12 @@
   <!-- Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-service.js?v=7.5"></script>
-  <script src="/js/api.js?v=7.5"></script>
-  <script src="/js/timer.js?v=7.5"></script>
-  <script src="/js/calendar.js?v=7.5"></script>
-  <script src="/js/stats.js?v=7.5"></script>
-  <script src="/js/app.js?v=7.5"></script>
+  <script src="/js/firebase-service.js?v=7.6"></script>
+  <script src="/js/api.js?v=7.6"></script>
+  <script src="/js/timer.js?v=7.6"></script>
+  <script src="/js/calendar.js?v=7.6"></script>
+  <script src="/js/stats.js?v=7.6"></script>
+  <script src="/js/app.js?v=7.6"></script>
   <script>
     // Gestione apertura modale Aggiungi Materia o Evento
     window.openSubjectModal = function(preselectedDow) {
@@ -799,17 +784,10 @@
         setTimeout(function() { titleInput.focus(); }, 80);
       }
 
-      var estSelect = document.getElementById("editTaskEstSelect");
-      if (estSelect) {
-        var est = item.estimated_minutes || 25;
-        var exists = Array.from(estSelect.options).some(function(opt) { return opt.value == est; });
-        if (!exists && est > 0) {
-          var opt = document.createElement("option");
-          opt.value = est;
-          opt.textContent = est + " minuti";
-          estSelect.appendChild(opt);
-        }
-        estSelect.value = String(est);
+      var estInput = document.getElementById("editTaskEstInput") || document.getElementById("editTaskEstSelect");
+      if (estInput) {
+        var est = item.estimated_minutes !== undefined && item.estimated_minutes !== null ? item.estimated_minutes : 25;
+        estInput.value = String(est);
       }
 
       var subSelect = document.getElementById("editTaskSubjectSelect");
@@ -855,7 +833,8 @@
           e.preventDefault();
           var taskId = document.getElementById("editTaskId")?.value;
           var title = document.getElementById("editTaskTitleInput")?.value.trim();
-          var estMin = parseInt(document.getElementById("editTaskEstSelect")?.value || "25");
+          var estInput = document.getElementById("editTaskEstInput") || document.getElementById("editTaskEstSelect");
+          var estMin = Math.max(1, parseInt(estInput?.value || "25") || 25);
           var subSelect = document.getElementById("editTaskSubjectSelect");
           var selectedSubName = subSelect?.value || "";
           var selectedEventId = subSelect?.options[subSelect.selectedIndex]?.getAttribute("data-event-id") || null;
