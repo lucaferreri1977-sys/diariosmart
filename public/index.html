@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>DiarioSmart - Diario & Calendario Scolastico</title>
-  <link rel="stylesheet" href="/css/style.css?v=7.7">
+  <link rel="stylesheet" href="/css/style.css?v=7.8">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -216,9 +216,9 @@
               <form id="dailyQuickTaskForm" class="daily-quick-task-bar">
                 <div class="quick-task-fields">
                   <input type="text" id="quickTaskTitleInput" class="form-control quick-title-input" placeholder="✏️ Aggiungi un compito o esercizio da fare..." required />
-                  <div class="quick-est-group" title="Tempo stimato in minuti (selezione libera)">
+                  <div class="quick-est-group" title="Tempo stimato in minuti (clicca per scrivere, frecce su/giù per regolare)">
                     <span class="quick-est-icon">⏱️</span>
-                    <input type="number" id="quickTaskEstInput" class="quick-est-input" min="1" max="480" value="25" placeholder="min" aria-label="Minuti stimati" />
+                    <input type="number" id="quickTaskEstInput" class="quick-est-input" min="1" max="480" value="25" placeholder="25" aria-label="Minuti stimati" inputmode="numeric" />
                     <span class="quick-est-unit">min</span>
                   </div>
                   <button type="submit" class="btn-primary quick-add-btn">
@@ -658,8 +658,12 @@
             <div class="form-group col">
               <label for="editTaskEstInput">⏱️ Tempo Stimato</label>
               <div class="modal-est-group">
-                <input type="number" id="editTaskEstInput" class="form-control" min="1" max="480" value="25" placeholder="es. 25" required />
-                <span class="modal-est-unit">min</span>
+                <button type="button" class="modal-est-step-btn" id="btnModalEstDec" title="Riduci di 5 minuti">−</button>
+                <div class="modal-est-input-wrap">
+                  <input type="number" id="editTaskEstInput" class="modal-est-input" min="1" max="480" value="25" placeholder="25" required inputmode="numeric" />
+                  <span class="modal-est-unit">min</span>
+                </div>
+                <button type="button" class="modal-est-step-btn" id="btnModalEstInc" title="Aumenta di 5 minuti">+</button>
               </div>
             </div>
             <div class="form-group col" id="editTaskSubjectCol">
@@ -685,12 +689,12 @@
   <!-- Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-service.js?v=7.7"></script>
-  <script src="/js/api.js?v=7.7"></script>
-  <script src="/js/timer.js?v=7.7"></script>
-  <script src="/js/calendar.js?v=7.7"></script>
-  <script src="/js/stats.js?v=7.7"></script>
-  <script src="/js/app.js?v=7.7"></script>
+  <script src="/js/firebase-service.js?v=7.8"></script>
+  <script src="/js/api.js?v=7.8"></script>
+  <script src="/js/timer.js?v=7.8"></script>
+  <script src="/js/calendar.js?v=7.8"></script>
+  <script src="/js/stats.js?v=7.8"></script>
+  <script src="/js/app.js?v=7.8"></script>
   <script>
     // Gestione apertura modale Aggiungi Materia o Evento
     window.openSubjectModal = function(preselectedDow) {
@@ -873,6 +877,45 @@
               saveBtn.disabled = false;
               saveBtn.textContent = "Salva Modifiche";
             }
+          }
+        });
+      }
+
+      // Regolazione rapida minuti nel modale di modifica (-5 / +5)
+      document.getElementById("btnModalEstDec")?.addEventListener("click", function(e) {
+        e.preventDefault();
+        var input = document.getElementById("editTaskEstInput");
+        if (input) {
+          var cur = parseInt(input.value || "25") || 25;
+          input.value = String(Math.max(1, cur - 5));
+        }
+      });
+      document.getElementById("btnModalEstInc")?.addEventListener("click", function(e) {
+        e.preventDefault();
+        var input = document.getElementById("editTaskEstInput");
+        if (input) {
+          var cur = parseInt(input.value || "25") || 25;
+          input.value = String(Math.min(480, cur + 5));
+        }
+      });
+
+      // Gestione selezione rapida e tasti su/giù per il campo minuti della barra giornaliera
+      var qGroup = document.querySelector(".quick-est-group");
+      var qInput = document.getElementById("quickTaskEstInput");
+      if (qGroup && qInput) {
+        qGroup.addEventListener("click", function(e) {
+          if (e.target !== qInput) {
+            qInput.focus();
+            qInput.select();
+          }
+        });
+        qInput.addEventListener("keydown", function(e) {
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            this.value = String(Math.min(480, (parseInt(this.value || "25") || 25) + 5));
+          } else if (e.key === "ArrowDown") {
+            e.preventDefault();
+            this.value = String(Math.max(1, (parseInt(this.value || "25") || 25) - 5));
           }
         });
       }
