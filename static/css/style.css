@@ -1474,13 +1474,13 @@ body.app-body {
 
 .form-control, .form-select {
   width: 100%;
-  height: 42px;
-  min-height: 42px;
-  padding: 0 12px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 14px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 14.5px;
   color: var(--text-main);
   background: #fff;
   box-sizing: border-box;
@@ -1493,11 +1493,11 @@ body.app-body {
   -moz-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
+  background-position: right 14px center;
   background-size: 16px 16px;
-  padding-right: 36px;
+  padding-right: 38px;
   cursor: pointer;
-  line-height: 40px;
+  line-height: 42px;
 }
 
 .form-control:focus, .form-select:focus {
@@ -3697,24 +3697,36 @@ input[type="number"] {
   flex-shrink: 0;
 }
 
-/* Allineamento uniforme per il modale Modifica Compito */
+/* Allineamento uniforme per i campi dei modali (Materia/Evento e Modifica Compito) */
+#subjectModal .form-control,
+#subjectModal .form-select,
 #taskEditModal .form-control,
 #taskEditModal .form-select,
 #taskEditModal .modal-est-group {
-  height: 42px !important;
-  min-height: 42px !important;
+  height: 44px !important;
+  min-height: 44px !important;
   box-sizing: border-box !important;
-  font-size: 14px !important;
+  font-size: 14.5px !important;
   border-radius: var(--radius-md) !important;
 }
 
+#subjectDaySelect,
 #editTaskSubjectSelect {
-  height: 42px !important;
-  min-height: 42px !important;
-  line-height: 40px !important;
-  font-size: 14px !important;
-  padding: 0 36px 0 12px !important;
+  width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  line-height: 42px !important;
+  font-size: 14.5px !important;
+  padding: 0 38px 0 14px !important;
   box-sizing: border-box !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 15 5 5 5-5'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 16px 16px !important;
+  cursor: pointer !important;
 }
 
 .quick-add-btn {
