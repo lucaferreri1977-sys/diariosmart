@@ -402,9 +402,11 @@ const FirebaseService = {
 
         const eventCard = {
           slot_id: null,
+          id: eDoc.id,
           is_event: true,
           period_number: subjects.length + extraEvents.length + 1,
           period_label: "Evento",
+          title: ev.title || "Evento",
           subject_name: ev.title || "Evento",
           category_id: ev.category_id || (matchedCat ? matchedCat.id : 1),
           category_name: catName,

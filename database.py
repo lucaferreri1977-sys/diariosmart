@@ -1083,9 +1083,11 @@ def get_daily_schedule(user_id: int, date_str: str) -> Dict[str, Any]:
 
         event_card = {
             "slot_id": None,
+            "id": ev_details["id"],
             "is_event": True,
             "period_number": len(subjects) + len(extra_events) + 1,
             "period_label": "Evento",
+            "title": ev_details.get("title") or "Evento",
             "subject_name": ev_details.get("title") or "Evento",
             "category_id": ev_details.get("category_id") or 1,
             "category_name": ev_details.get("category_name") or ev_details.get("title") or "Evento",

@@ -273,7 +273,24 @@ const Calendar = {
         const renderedTaskIds = new Set();
         const daySubjects = day.subjects || [];
 
-        if (daySubjects.length === 0 && (!day.extra_events || day.extra_events.length === 0)) {
+        // Filtra eventuali eventi straordinari non ancora inclusi in daySubjects per evitare duplicazioni
+        const renderedEventIds = new Set(
+          daySubjects.map(s => String(s.event_id || s.slot_id || s.id || ""))
+            .filter(id => id && id !== "null" && id !== "undefined")
+        );
+
+        const extraEventsToRender = (day.extra_events || []).filter(ex => {
+          const exId = String(ex.event_id || ex.id || "");
+          if (exId && renderedEventIds.has(exId)) return false;
+          const exName = (ex.subject_name || ex.title || "").toLowerCase().trim();
+          if (!exName) return false;
+          return !daySubjects.some(s => {
+            const sName = (s.subject_name || s.title || "").toLowerCase().trim();
+            return sName === exName && s.start_time === ex.start_time;
+          });
+        });
+
+        if (daySubjects.length === 0 && extraEventsToRender.length === 0) {
           const emptyDiv = document.createElement("div");
           emptyDiv.className = "week-day-empty-msg";
           emptyDiv.style.cursor = "pointer";
@@ -292,11 +309,12 @@ const Calendar = {
             const subHeader = document.createElement("div");
             subHeader.className = "week-subject-header";
             subHeader.title = `Clicca per aprire la materia nel diario del giorno`;
+            const displayName = sub.subject_name || sub.title || "Materia";
             subHeader.innerHTML = `
               <div class="week-subject-header-title">
-                <span>${sub.subject_name}</span>
+                <span>${displayName}</span>
               </div>
-              <span class="week-subject-header-time">${sub.start_time} - ${sub.end_time}</span>
+              <span class="week-subject-header-time">${sub.start_time || '08:00'}${sub.end_time ? ' - ' + sub.end_time : ''}</span>
             `;
             subHeader.addEventListener("click", (e) => {
               e.stopPropagation();
@@ -370,9 +388,10 @@ const Calendar = {
             dayBody.appendChild(card);
           });
 
-          // Eventi straordinari/pomeridiani (se presenti)
-          if (day.extra_events && day.extra_events.length > 0) {
-            day.extra_events.forEach(ex => {
+          // Eventi straordinari/pomeridiani (solo se non già inclusi in daySubjects)
+          if (extraEventsToRender.length > 0) {
+            extraEventsToRender.forEach(ex => {
+              const exTitle = ex.subject_name || ex.title || "Evento";
               const exCard = document.createElement("div");
               exCard.className = "week-subject-card extra-event";
               exCard.style.borderTop = `3px solid ${ex.category_color || '#8b5cf6'}`;
@@ -382,9 +401,9 @@ const Calendar = {
               exHeader.innerHTML = `
                 <div class="week-subject-header-title">
                   <span>${ex.category_icon || '🌟'}</span>
-                  <span>${ex.title}</span>
+                  <span>${exTitle}</span>
                 </div>
-                <span class="week-subject-header-time">${ex.start_time || 'Extra'}</span>
+                <span class="week-subject-header-time">${ex.start_time || 'Extra'}${ex.end_time ? ' - ' + ex.end_time : ''}</span>
               `;
               exCard.appendChild(exHeader);
 
@@ -411,7 +430,7 @@ const Calendar = {
                   row.addEventListener("click", (e) => {
                     e.stopPropagation();
                     this.currentDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
-                    this.selectedSubjectEventId = ex.id || null;
+                    this.selectedSubjectEventId = ex.event_id || ex.id || null;
                     if (typeof window.App?.switchView === "function") {
                       window.App.switchView("agenda");
                     }
