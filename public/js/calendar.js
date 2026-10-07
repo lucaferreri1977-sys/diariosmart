@@ -308,14 +308,15 @@ const Calendar = {
             // Header materia
             const subHeader = document.createElement("div");
             subHeader.className = "week-subject-header";
-            subHeader.title = `Clicca per aprire la materia nel diario del giorno`;
             const displayName = sub.subject_name || sub.title || "Materia";
-            const iconSpan = sub.category_icon ? `<span style="margin-right:5px;">${sub.category_icon}</span>` : '';
+            const timeStr = `${sub.start_time || '08:00'}${sub.end_time ? ' - ' + sub.end_time : ''}`;
+            subHeader.title = `${displayName} (${timeStr}) - Clicca per aprire nel diario del giorno`;
+            const iconSpan = sub.category_icon ? `<span class="week-subject-icon">${sub.category_icon}</span>` : '<span class="week-subject-icon">📚</span>';
             subHeader.innerHTML = `
               <div class="week-subject-header-title">
-                ${iconSpan}<span>${displayName}</span>
+                ${iconSpan}<span class="week-subject-name">${displayName}</span>
               </div>
-              <span class="week-subject-header-time">${sub.start_time || '08:00'}${sub.end_time ? ' - ' + sub.end_time : ''}</span>
+              <span class="week-subject-header-time">🕒 ${timeStr}</span>
             `;
             subHeader.addEventListener("click", (e) => {
               e.stopPropagation();
@@ -393,18 +394,21 @@ const Calendar = {
           if (extraEventsToRender.length > 0) {
             extraEventsToRender.forEach(ex => {
               const exTitle = ex.subject_name || ex.title || "Evento";
+              const exTimeStr = `${ex.start_time || 'Extra'}${ex.end_time ? ' - ' + ex.end_time : ''}`;
               const exCard = document.createElement("div");
               exCard.className = "week-subject-card extra-event";
               exCard.style.borderTop = `3px solid ${ex.category_color || '#8b5cf6'}`;
 
               const exHeader = document.createElement("div");
               exHeader.className = "week-subject-header";
+              exHeader.title = `${exTitle} (${exTimeStr}) - Clicca per aprire nel diario del giorno`;
+              const exIcon = ex.category_icon || '🌟';
               exHeader.innerHTML = `
                 <div class="week-subject-header-title">
-                  <span>${ex.category_icon || '🌟'}</span>
-                  <span>${exTitle}</span>
+                  <span class="week-subject-icon">${exIcon}</span>
+                  <span class="week-subject-name">${exTitle}</span>
                 </div>
-                <span class="week-subject-header-time">${ex.start_time || 'Extra'}${ex.end_time ? ' - ' + ex.end_time : ''}</span>
+                <span class="week-subject-header-time">🕒 ${exTimeStr}</span>
               `;
               exCard.appendChild(exHeader);
 
@@ -474,8 +478,8 @@ const Calendar = {
             otherHeader.className = "week-subject-header";
             otherHeader.innerHTML = `
               <div class="week-subject-header-title">
-                <span>📝</span>
-                <span>Altri Compiti</span>
+                <span class="week-subject-icon">📝</span>
+                <span class="week-subject-name">Altri Compiti</span>
               </div>
             `;
             otherCard.appendChild(otherHeader);
