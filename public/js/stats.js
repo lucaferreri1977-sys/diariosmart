@@ -218,24 +218,26 @@ const StatsDashboard = {
       const header = document.createElement("div");
       header.className = "parent-subject-header";
       header.innerHTML = `
-        <div class="parent-subject-header-info">
+        <div class="parent-subject-top-row">
           <span class="parent-subject-title">
             ${sub.category_icon ? `<span class="parent-subject-icon">${sub.category_icon}</span>` : ''}<span class="parent-subject-name">${sub.subject_name}</span>
           </span>
-          <span class="parent-subject-time">
-            ${sub.start_time} - ${sub.end_time}
-          </span>
         </div>
-        <div class="parent-subject-header-actions">
-          <button type="button" class="btn-edit-subject parent-only" title="Modifica questa materia">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-            </svg>
-          </button>
-          <button type="button" class="btn-delete-subject parent-only" title="Elimina questa materia dall'orario">
-            <span style="font-size:13px; line-height:1;">🗑️</span>
-            <span style="line-height:1;">Elimina</span>
-          </button>
+        <div class="parent-subject-bottom-row">
+          <span class="parent-subject-time">
+            🕒 ${sub.start_time} - ${sub.end_time}
+          </span>
+          <div class="parent-subject-header-actions">
+            <button type="button" class="btn-edit-subject parent-only" title="Modifica questa materia">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+              </svg>
+            </button>
+            <button type="button" class="btn-delete-subject parent-only" title="Elimina questa materia dall'orario">
+              <span style="font-size:13px; line-height:1;">🗑️</span>
+              <span style="line-height:1;">Elimina</span>
+            </button>
+          </div>
         </div>
       `;
 
