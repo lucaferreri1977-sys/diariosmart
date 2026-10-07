@@ -182,29 +182,83 @@ const TaskTimer = {
 
   /**
    * Campanello sonoro al termine del conto alla rovescia (00:00).
+   * Suona per 5 secondi pieni con una sequenza armoniosa di rintocchi.
+   * @param {number} durationSeconds - Durata del suono in secondi (default: 5)
    */
-  playChime() {
+  playChime(durationSeconds = 5) {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
       
-      const playTone = (freq, delay, dur) => {
+      const playTone = (freq, delay, dur, gainVal = 0.35) => {
+        const startTime = ctx.currentTime + delay;
+        const endTime = startTime + dur;
+
+        // Tono fondamentale sinusoidale
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
-        gain.gain.setValueAtTime(0.35, ctx.currentTime + delay);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        // Armonica superiore brillante da campana
+        const overtoneOsc = ctx.createOscillator();
+        const overtoneGain = ctx.createGain();
+        overtoneOsc.type = "triangle";
+        overtoneOsc.frequency.setValueAtTime(freq * 2, startTime);
+
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.linearRampToValueAtTime(gainVal, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
+
+        overtoneGain.gain.setValueAtTime(0.001, startTime);
+        overtoneGain.gain.linearRampToValueAtTime(gainVal * 0.25, startTime + 0.015);
+        overtoneGain.gain.exponentialRampToValueAtTime(0.0001, startTime + Math.min(0.35, dur * 0.5));
+
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + delay);
-        osc.stop(ctx.currentTime + delay + dur);
+        overtoneOsc.connect(overtoneGain);
+        overtoneGain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(endTime);
+        overtoneOsc.start(startTime);
+        overtoneOsc.stop(endTime);
       };
 
-      // Doppio rintocco classico da timer da cucina (Ding-Dong)
-      playTone(880, 0, 0.8);    // La5
-      playTone(659.25, 0.35, 1.2); // Mi5
+      if (durationSeconds >= 5) {
+        // Sequenza allarme di 5.0 secondi: 4 rintocchi melodici
+        // Rintocco 1 (0.0s - 1.1s): Ding-Dong
+        playTone(880, 0.00, 0.55, 0.35);    // La5
+        playTone(659.25, 0.28, 0.80, 0.32); // Mi5
+
+        // Rintocco 2 (1.25s - 2.35s): Ding-Dong
+        playTone(880, 1.25, 0.55, 0.35);    // La5
+        playTone(659.25, 1.53, 0.80, 0.32); // Mi5
+
+        // Rintocco 3 (2.50s - 3.60s): Ding-Dong
+        playTone(880, 2.50, 0.55, 0.35);    // La5
+        playTone(659.25, 2.78, 0.80, 0.32); // Mi5
+
+        // Rintocco 4 Finale (3.75s - 5.00s): Risoluzione verso l'alto prolungata fino a 5 secondi
+        playTone(783.99, 3.75, 0.45, 0.32);  // Sol5
+        playTone(1046.50, 4.05, 0.95, 0.38); // Do6 (decade a silenzio esattamente a 5.0s)
+
+        setTimeout(() => {
+          try { ctx.close(); } catch (e) {}
+        }, 5200);
+      } else {
+        // Rintocco breve (es. stop manuale del compito)
+        playTone(880, 0.00, 0.60, 0.35);
+        playTone(659.25, 0.30, 0.90, 0.32);
+
+        setTimeout(() => {
+          try { ctx.close(); } catch (e) {}
+        }, 1500);
+      }
     } catch (e) {
       console.warn("Audio non disponibile:", e);
     }
@@ -263,9 +317,9 @@ const TaskTimer = {
       const isOvertime = elapsedSec > targetSec;
       const overtimeSec = isOvertime ? elapsedSec - targetSec : 0;
 
-      // Se il conto alla rovescia tocca lo zero, suona il campanello
+      // Se il conto alla rovescia tocca lo zero, suona il campanello per 5 secondi pieni
       if (remainingSec === 0 && !timerObj.chimePlayed) {
-        this.playChime();
+        this.playChime(5);
         timerObj.chimePlayed = true;
         if (typeof window.App?.showToast === "function") {
           window.App.showToast("⏰ Tempo scaduto! Ottimo lavoro, controlla se hai finito!", "🔔");
@@ -336,7 +390,7 @@ const TaskTimer = {
       delete this.activeTimers[itemId];
     }
 
-    this.playChime();
+    this.playChime(1.5);
 
     try {
       const res = await API.stopItemTimer(itemId, elapsedMinutes);
