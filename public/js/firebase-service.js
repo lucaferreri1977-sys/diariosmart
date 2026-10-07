@@ -319,7 +319,7 @@ const FirebaseService = {
         }
       });
 
-      // 3. Costruisci le materie
+      // 3. Costruisci le materie dall'orario scolastico (timetable_slots)
       const subjects = daySlots.map((slot, idx) => {
         const sKey = (slot.subject_name || "").toLowerCase().trim();
         const slotIdStr = String(slot.id);
@@ -337,6 +337,7 @@ const FirebaseService = {
 
         return {
           slot_id: slot.id,
+          is_event: false,
           period_number: slot.period_number || (idx + 1),
           period_label: "",
           subject_name: slot.subject_name,
@@ -364,23 +365,113 @@ const FirebaseService = {
         };
       });
 
+      // 3b. Recupera eventi del giorno dalla collection 'events'
+      const eventsSnap = await this.db.collection("events")
+        .where("event_date", "==", dateStr)
+        .get();
+
+      const extraEvents = [];
+      eventsSnap.forEach(eDoc => {
+        const ev = eDoc.data();
+        const evIdStr = String(eDoc.id);
+
+        // Evita duplicati se l'evento è già coperto da uno slot
+        const isAlreadyInSlots = subjects.some(s => 
+          String(s.slot_id) === evIdStr || 
+          (s.subject_name && ev.title && s.subject_name.toLowerCase().trim() === ev.title.toLowerCase().trim() && s.start_time === ev.start_time)
+        );
+        if (isAlreadyInSlots) return;
+
+        const evKey = (ev.title || "").toLowerCase().trim();
+        const items = tasksByEventId[evIdStr] || tasksBySubject[evKey] || [];
+
+        items.forEach(i => {
+          i.event_id = eDoc.id;
+          if (!i.subject_name) i.subject_name = ev.title;
+        });
+
+        const evTasks = items.length;
+        const evDone = items.filter(i => i.completed).length;
+        const evEst = items.reduce((sum, i) => sum + (i.estimated_minutes || 0), 0);
+        const evAct = items.reduce((sum, i) => sum + (i.actual_minutes || 0), 0);
+
+        const matchedCat = this.defaultCategories.find(c => c.name.toLowerCase() === evKey);
+        const catColor = ev.category_color || (matchedCat ? matchedCat.color : "#3b82f6");
+        const catIcon = ev.category_icon || (matchedCat ? matchedCat.icon : "📅");
+        const catName = ev.category_name || (matchedCat ? matchedCat.name : (ev.title || "Evento"));
+
+        const eventCard = {
+          slot_id: null,
+          is_event: true,
+          period_number: subjects.length + extraEvents.length + 1,
+          period_label: "Evento",
+          subject_name: ev.title || "Evento",
+          category_id: ev.category_id || (matchedCat ? matchedCat.id : 1),
+          category_name: catName,
+          category_color: catColor,
+          category_icon: catIcon,
+          start_time: ev.start_time || "08:00",
+          end_time: ev.end_time || "09:00",
+          room: ev.room || "",
+          event_id: eDoc.id,
+          lists: [
+            {
+              id: "list_" + eDoc.id,
+              title: "Compiti",
+              items: items
+            }
+          ],
+          stats: {
+            total_tasks: evTasks,
+            completed_tasks: evDone,
+            estimated_minutes: evEst,
+            actual_minutes: evAct
+          }
+        };
+
+        extraEvents.push(eventCard);
+      });
+
+      // Unisci materie ed eventi e ordina per orario di inizio
+      const allSubjects = [...subjects, ...extraEvents];
+      allSubjects.sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""));
+
       // 4. Costruisci unified_todos per la colonna destra del diario
       const unified_todos = [];
-      subjects.forEach(sub => {
+      const seenItemIds = new Set();
+
+      allSubjects.forEach(sub => {
         (sub.lists || []).forEach(l => {
           (l.items || []).forEach(item => {
-            unified_todos.push({
-              ...item,
-              subject_name: sub.subject_name,
-              category_name: sub.category_name,
-              category_color: sub.category_color,
-              category_icon: sub.category_icon,
-              event_id: sub.event_id,
-              start_time: sub.start_time,
-              end_time: sub.end_time
-            });
+            if (!seenItemIds.has(item.id)) {
+              seenItemIds.add(item.id);
+              unified_todos.push({
+                ...item,
+                subject_name: sub.subject_name,
+                category_name: sub.category_name,
+                category_color: sub.category_color,
+                category_icon: sub.category_icon,
+                event_id: sub.event_id,
+                start_time: sub.start_time,
+                end_time: sub.end_time
+              });
+            }
           });
         });
+      });
+
+      allTasks.forEach(task => {
+        if (!seenItemIds.has(task.id)) {
+          seenItemIds.add(task.id);
+          unified_todos.push({
+            ...task,
+            category_name: task.subject_name || "Generale",
+            category_color: "#64748b",
+            category_icon: "📝",
+            start_time: "08:00",
+            end_time: "09:00"
+          });
+        }
       });
 
       const totTasks = unified_todos.length;
@@ -396,9 +487,9 @@ const FirebaseService = {
           day_name: dayName,
           day_of_week: dow,
           is_weekend: (dow === 6 || dow === 7),
-          subjects: subjects,
+          subjects: allSubjects,
           unified_todos: unified_todos,
-          extra_events: [],
+          extra_events: extraEvents,
           totals: {
             total_tasks: totTasks,
             completed_tasks: doneTasks,
@@ -475,6 +566,16 @@ const FirebaseService = {
               const m = String(d.getMonth() + 1).padStart(2, "0");
               const day = String(d.getDate()).padStart(2, "0");
               taskDate = `${y}-${m}-${day}`;
+            }
+          } else {
+            // Controlla se è un evento singolo nella collection events
+            const evDoc = await this.db.collection("events").doc(String(eventId)).get();
+            if (evDoc.exists) {
+              const evData = evDoc.data();
+              subName = evData.title || "";
+              if (!taskDate && evData.event_date) {
+                taskDate = evData.event_date;
+              }
             }
           }
         } catch (e) {}
@@ -613,10 +714,19 @@ const FirebaseService = {
   async createEvent(eventData) {
     await this.init();
     try {
+      const matchedCat = this.defaultCategories.find(c => c.name.toLowerCase() === (eventData.title || '').toLowerCase());
+      const catId = eventData.category_id || (matchedCat ? matchedCat.id : 1);
+      const catColor = eventData.category_color || (matchedCat ? matchedCat.color : "#3b82f6");
+      const catIcon = eventData.category_icon || (matchedCat ? matchedCat.icon : "📅");
+      const catName = eventData.category_name || (matchedCat ? matchedCat.name : (eventData.title || "Evento"));
+
       const docRef = await this.db.collection("events").add({
         title: eventData.title || "",
         description: eventData.description || "",
-        category_id: eventData.category_id || 1,
+        category_id: catId,
+        category_name: catName,
+        category_color: catColor,
+        category_icon: catIcon,
         event_date: eventData.event_date || new Date().toISOString().split("T")[0],
         start_time: eventData.start_time || "08:00",
         end_time: eventData.end_time || "09:00",
@@ -634,10 +744,39 @@ const FirebaseService = {
     }
   },
 
+  async updateEvent(eventId, eventData) {
+    await this.init();
+    try {
+      const evRef = this.db.collection("events").doc(String(eventId));
+      const updateObj = {};
+      if (eventData.title !== undefined) updateObj.title = eventData.title;
+      if (eventData.description !== undefined) updateObj.description = eventData.description;
+      if (eventData.start_time !== undefined) updateObj.start_time = eventData.start_time;
+      if (eventData.end_time !== undefined) updateObj.end_time = eventData.end_time;
+      if (eventData.event_date !== undefined) updateObj.event_date = eventData.event_date;
+      if (eventData.category_id !== undefined) updateObj.category_id = eventData.category_id;
+      if (eventData.category_color !== undefined) updateObj.category_color = eventData.category_color;
+      updateObj.updated_at = new Date().toISOString();
+
+      await evRef.update(updateObj);
+      return { ok: true };
+    } catch (err) {
+      console.error("Firebase updateEvent errore:", err);
+      throw err;
+    }
+  },
+
   async deleteEvent(eventId, deleteAllRecurring = false) {
     await this.init();
     try {
       await this.db.collection("events").doc(String(eventId)).delete();
+      // Rimuovi eventuali compiti collegati a questo evento
+      const tasksSnap = await this.db.collection("todo_items").where("event_id", "==", String(eventId)).get();
+      if (!tasksSnap.empty) {
+        const batch = this.db.batch();
+        tasksSnap.forEach(tDoc => batch.delete(tDoc.ref));
+        await batch.commit();
+      }
       return { ok: true };
     } catch (err) {
       console.error("Firebase deleteEvent errore:", err);

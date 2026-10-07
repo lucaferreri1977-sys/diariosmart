@@ -974,6 +974,7 @@ def get_daily_schedule(user_id: int, date_str: str) -> Dict[str, Any]:
 
         subject_card = {
             "slot_id": slot["id"],
+            "is_event": False,
             "period_number": slot["period_number"],
             "period_label": "",
             "subject_name": slot["subject_name"],
@@ -996,13 +997,65 @@ def get_daily_schedule(user_id: int, date_str: str) -> Dict[str, Any]:
         }
         subjects.append(subject_card)
 
-    # 3. Totali generali per la giornata (solo materie scolastiche)
+    # 2b. Recupera eventi straordinari o singoli del giorno non legati all'orario scolastico fisso
+    extra_events = []
+    for ev in existing_events:
+        if ev["id"] in matched_event_ids:
+            continue
+        ev_details = get_event_details(ev["id"])
+        lists = ev_details.get("lists", [])
+        if not lists:
+            create_todo_list(ev_details["id"], "Compiti")
+            ev_details = get_event_details(ev_details["id"])
+            lists = ev_details.get("lists", [])
+
+        s_tasks = 0
+        s_completed = 0
+        s_est = 0
+        s_act = 0
+        for l in lists:
+            for item in l.get("items", []):
+                s_tasks += 1
+                if item.get("completed"):
+                    s_completed += 1
+                s_est += int(item.get("estimated_minutes") or 0)
+                s_act += int(item.get("actual_minutes") or 0)
+
+        event_card = {
+            "slot_id": None,
+            "is_event": True,
+            "period_number": len(subjects) + len(extra_events) + 1,
+            "period_label": "Evento",
+            "subject_name": ev_details.get("title") or "Evento",
+            "category_id": ev_details.get("category_id") or 1,
+            "category_name": ev_details.get("category_name") or ev_details.get("title") or "Evento",
+            "category_color": ev_details.get("category_color") or "#3b82f6",
+            "category_icon": ev_details.get("category_icon") or "📅",
+            "start_time": ev_details.get("start_time") or "08:00",
+            "end_time": ev_details.get("end_time") or "09:00",
+            "room": ev_details.get("room", ""),
+            "event_id": ev_details["id"],
+            "event": ev_details,
+            "lists": lists,
+            "stats": {
+                "total_tasks": s_tasks,
+                "completed_tasks": s_completed,
+                "estimated_minutes": s_est,
+                "actual_minutes": s_act
+            }
+        }
+        extra_events.append(event_card)
+        subjects.append(event_card)
+
+    subjects.sort(key=lambda s: s.get("start_time") or "00:00")
+
+    # 3. Totali generali per la giornata (materie scolastiche ed eventi)
     tot_tasks = sum(s["stats"]["total_tasks"] for s in subjects)
     tot_done = sum(s["stats"]["completed_tasks"] for s in subjects)
     tot_est = sum(s["stats"]["estimated_minutes"] for s in subjects)
     tot_act = sum(s["stats"]["actual_minutes"] for s in subjects)
 
-    # 4. Lista unificata dei compiti per le materie della giornata
+    # 4. Lista unificata dei compiti per le materie e gli eventi della giornata
     unified_todos = []
     for sub in subjects:
         for l in sub.get("lists", []):
@@ -1024,7 +1077,7 @@ def get_daily_schedule(user_id: int, date_str: str) -> Dict[str, Any]:
         "day_name": day_name,
         "is_weekend": dow in (6, 7),
         "subjects": subjects,
-        "extra_events": [],
+        "extra_events": extra_events,
         "unified_todos": unified_todos,
         "totals": {
             "total_tasks": tot_tasks,

@@ -384,6 +384,21 @@ const App = {
     const editEventId = document.getElementById("subjectEditEventId")?.value;
 
     try {
+      // Calcola la data di riferimento per il giorno della settimana selezionato
+      let targetDate;
+      if (window.StatsDashboard && typeof window.StatsDashboard.getTargetDateForSelectedDow === "function") {
+        window.StatsDashboard.selectedDayOfWeek = dayOfWeek;
+        targetDate = window.StatsDashboard.getTargetDateForSelectedDow();
+      } else {
+        const today = new Date();
+        const currentDow = today.getDay() === 0 ? 7 : today.getDay();
+        const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12, 0, 0);
+        monday.setDate(today.getDate() - (currentDow - 1));
+        targetDate = new Date(monday);
+        targetDate.setDate(monday.getDate() + (dayOfWeek - 1));
+      }
+      const dateIso = Calendar.formatDateIso(targetDate);
+
       if (editSlotId) {
         await API.updateTimetableSlot(editSlotId, {
           day_of_week: dayOfWeek,
@@ -396,7 +411,8 @@ const App = {
         await API.updateEvent(editEventId, {
           title: name,
           start_time: startTime,
-          end_time: endTime
+          end_time: endTime,
+          event_date: dateIso
         });
         this.showToast(`"${name}" aggiornato con successo!`, "✏️");
       } else if (isRecurring) {
@@ -409,14 +425,6 @@ const App = {
         this.showToast(`"${name}" aggiunto all'orario settimanale!`, "📚");
       } else {
         // Evento singolo per il giorno scelto
-        const today = new Date();
-        const currentDow = today.getDay() === 0 ? 7 : today.getDay();
-        let diffDays = (dayOfWeek - currentDow);
-        if (diffDays < 0) diffDays += 7;
-        const targetDate = new Date(today);
-        targetDate.setDate(targetDate.getDate() + diffDays);
-        const dateIso = Calendar.formatDateIso(targetDate);
-
         let childUser = (this.users || []).find(u => u.role === "child" || u.username === "giulio");
         await API.createEvent({
           title: name,
@@ -438,6 +446,7 @@ const App = {
         await window.StatsDashboard.refresh();
       }
       if (window.Calendar) {
+        window.Calendar.currentDate = targetDate;
         await window.Calendar.refresh();
       }
     } catch (err) {

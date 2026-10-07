@@ -228,6 +228,13 @@ const API = {
   },
 
   async updateEvent(eventId, eventData) {
+    if (window.FirebaseService && window.FirebaseService.isReady) {
+      try {
+        return await window.FirebaseService.updateEvent(eventId, eventData);
+      } catch (e) {
+        console.warn("Fallback su updateEvent API:", e);
+      }
+    }
     return await this.request(`/api/events/${eventId}`, {
       method: "PUT",
       body: JSON.stringify(eventData)

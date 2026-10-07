@@ -236,6 +236,49 @@ def run_tests():
     database.delete_timetable_slot(sun_slot_id, user_id=c_user["id"])
     print("✅ Test 9 superato! Configurazione materie ed eventi per Domenica verificata con successo.")
 
+    # Test 10: Evento singolo non ricorrente (es. Partita o Test) nel weekend e integrazione nel daily schedule
+    print("Test 10: Evento singolo non ricorrente (Partita / Test) nel weekend e visione giornaliera...")
+    sun_date_str = "2026-10-11"
+    match_ev_id = database.create_event(
+        title="Partita",
+        description="Partita di campionato",
+        category_id=1,
+        event_date=sun_date_str,
+        start_time="15:00",
+        end_time="17:00",
+        is_all_day=False,
+        assigned_to_user_id=c_user["id"],
+        created_by_user_id=p_user["id"],
+        is_recurring_weekly=False
+    )
+    assert match_ev_id > 0
+
+    # Recupera il daily schedule di domenica: l'evento singolo deve essere presente tra i subjects!
+    sun_sched = database.get_daily_schedule(c_user["id"], sun_date_str)
+    partita_card = next((s for s in sun_sched["subjects"] if s["subject_name"] == "Partita"), None)
+    assert partita_card is not None, "Evento singolo 'Partita' non presente nel daily schedule di domenica!"
+    assert partita_card["is_event"] is True
+    assert partita_card["event_id"] == match_ev_id
+    assert partita_card["start_time"] == "15:00"
+
+    # Aggiungi un compito rapido per questo evento
+    task_match = database.quick_add_task_to_event(match_ev_id, "Preparare borsa e scarpini", estimated_minutes=15)
+    assert task_match["id"] > 0
+
+    # Ricarica il daily schedule e verifica che il compito compaia sia sotto la materia che nei to-do unificati
+    sun_sched_updated = database.get_daily_schedule(c_user["id"], sun_date_str)
+    partita_updated = next(s for s in sun_sched_updated["subjects"] if s["subject_name"] == "Partita")
+    assert partita_updated["stats"]["total_tasks"] == 1
+    assert any(t["title"] == "Preparare borsa e scarpini" for t in sun_sched_updated["unified_todos"])
+    assert sun_sched_updated["totals"]["total_tasks"] >= 1
+    assert sun_sched_updated["totals"]["total_estimated_minutes"] >= 15
+
+    # Pulizia evento singolo e relativi compiti
+    database.delete_event(match_ev_id)
+    sun_sched_after = database.get_daily_schedule(c_user["id"], sun_date_str)
+    assert not any(s["subject_name"] == "Partita" for s in sun_sched_after["subjects"]), "Evento non rimosso dopo eliminazione"
+    print("✅ Test 10 superato! Eventi singoli (Partita / Test) integrati perfettamente in daily schedule e to-do!")
+
     # Cleanup evento di test 1, slot di test 6 e compito rapido di test 6
     database.delete_todo_item(quick_item["id"])
     database.delete_timetable_slot(test_slot_id, user_id=c_user["id"])
