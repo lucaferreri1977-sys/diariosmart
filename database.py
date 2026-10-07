@@ -637,8 +637,9 @@ def get_parent_stats(start_date: Optional[str] = None, end_date: Optional[str] =
     """Calcola statistiche aggregate di rendimento, tempi stimati vs reali e suddivisione materie."""
     if not start_date or not end_date:
         today = datetime.date.today()
-        # Default ultimi 7 giorni
-        end_date = today.isoformat()
+        # Default ultimi 7 giorni con estensione alla fine della settimana scolastica corrente (Domenica)
+        cur_dow = today.isoweekday() # 1=Lunedì, 7=Domenica
+        end_date = (today + datetime.timedelta(days=(7 - cur_dow))).isoformat()
         start_date = (today - datetime.timedelta(days=7)).isoformat()
         
     with get_connection() as conn:

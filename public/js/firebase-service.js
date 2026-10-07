@@ -683,23 +683,27 @@ const FirebaseService = {
       let totalAct = 0;
       const topDeviations = [];
 
-      const isDateInRange = (dStr) => {
+      const isDateInRange = (dStr, hasActual = false) => {
         if (!startDate && !endDate) return true;
         if (!dStr) return true; // Include anche compiti privi di data esplicita
         if (startDate && dStr < startDate) return false;
-        if (endDate && dStr > endDate) return false;
+        if (endDate && dStr > endDate) {
+          // Se il compito è già stato svolto o ha tempo effettivo registrato, non escluderlo
+          if (hasActual) return true;
+          return false;
+        }
         return true;
       };
 
       snap.forEach(doc => {
         const d = doc.data();
         const taskDate = d.date_str || "";
-        if (!isDateInRange(taskDate)) return;
+        const est = parseInt(d.estimated_minutes || 0);
+        const act = parseInt(d.actual_minutes || 0);
+        if (!isDateInRange(taskDate, act > 0)) return;
 
         totalTasks++;
         if (d.completed) completedTasks++;
-        const est = parseInt(d.estimated_minutes || 0);
-        const act = parseInt(d.actual_minutes || 0);
         totalEst += est;
         totalAct += act;
 

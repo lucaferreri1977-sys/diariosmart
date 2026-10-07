@@ -107,7 +107,21 @@ const StatsDashboard = {
     if (periodVal !== "all") {
       const days = parseInt(periodVal) || 7;
       const today = new Date();
-      endDate = Calendar.formatDateIso(today);
+
+      // Calcola fine periodo: estendi almeno fino alla fine della settimana scolastica corrente (Domenica)
+      // così da includere SEMPRE tutti i compiti registrati o svolti per Giovedì, Venerdì e il resto della settimana!
+      const curDow = today.getDay() === 0 ? 7 : today.getDay();
+      const endOfWeek = new Date(today);
+      endOfWeek.setDate(today.getDate() + (7 - curDow));
+
+      if (days >= 30) {
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const maxEnd = endOfWeek > endOfMonth ? endOfWeek : endOfMonth;
+        endDate = Calendar.formatDateIso(maxEnd);
+      } else {
+        endDate = Calendar.formatDateIso(endOfWeek);
+      }
+
       const startDateObj = new Date(today);
       startDateObj.setDate(startDateObj.getDate() - days);
       startDate = Calendar.formatDateIso(startDateObj);
@@ -442,7 +456,7 @@ const StatsDashboard = {
                 <span style="background:#eff6ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:700; font-size:11px;">
                   ${task.category_name || 'Generale'}
                 </span>
-                ${task.event_date ? `<span style="margin-left: 6px; font-size:11px; color:var(--text-muted);">Data: <strong>${task.event_date}</strong></span>` : ''}
+                ${task.event_date ? `<span style="margin-left: 6px; font-size:11px; color:var(--text-muted);">Data: <strong>${this.formatEventDate(task.event_date)}</strong></span>` : ''}
               </div>
             </div>
             <div style="display:flex; align-items:center; gap:10px;">
@@ -460,6 +474,20 @@ const StatsDashboard = {
         });
       }
     }
+  },
+
+  formatEventDate(dStr) {
+    if (!dStr) return "";
+    try {
+      const parts = dStr.split("-");
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        const dayNames = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+        const dayName = dayNames[d.getDay()];
+        return `${dayName} ${parts[2]}/${parts[1]}`;
+      }
+    } catch (e) {}
+    return dStr;
   }
 };
 
