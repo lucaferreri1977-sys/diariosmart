@@ -416,22 +416,41 @@ def create_event(title: str, description: str = "", category_id: Optional[int] =
                  start_time: Optional[str] = None, end_time: Optional[str] = None, is_all_day: bool = False,
                  assigned_to_user_id: int = 1, created_by_user_id: int = 1,
                  is_recurring_weekly: bool = False, repeat_weeks: int = 1,
-                 category_color: Optional[str] = None) -> int:
+                 category_color: Optional[str] = None,
+                 category_icon: Optional[str] = None) -> int:
     with get_connection() as conn:
         cursor = conn.cursor()
         
-        if category_color:
+        if category_color or category_icon:
             if not category_id:
                 cursor.execute("SELECT id FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1", (title,))
                 c_row = cursor.fetchone()
                 if c_row:
                     category_id = c_row["id"]
-                    cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+                    up_fields = []
+                    up_params = []
+                    if category_color:
+                        up_fields.append("color = ?")
+                        up_params.append(category_color)
+                    if category_icon:
+                        up_fields.append("icon = ?")
+                        up_params.append(category_icon)
+                    up_params.append(category_id)
+                    cursor.execute(f"UPDATE categories SET {', '.join(up_fields)} WHERE id = ?", tuple(up_params))
                 else:
-                    cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, '📅')", (title, category_color))
+                    cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, ?)", (title, category_color or '#3b82f6', category_icon or '📅'))
                     category_id = cursor.lastrowid
             else:
-                cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+                up_fields = []
+                up_params = []
+                if category_color:
+                    up_fields.append("color = ?")
+                    up_params.append(category_color)
+                if category_icon:
+                    up_fields.append("icon = ?")
+                    up_params.append(category_icon)
+                up_params.append(category_id)
+                cursor.execute(f"UPDATE categories SET {', '.join(up_fields)} WHERE id = ?", tuple(up_params))
 
         repeat_count = max(1, int(repeat_weeks)) if is_recurring_weekly else 1
         rec_group_id = f"rec_{secrets.token_hex(8)}" if is_recurring_weekly and repeat_count > 1 else None
@@ -458,28 +477,56 @@ def update_event(event_id: int, title: str, description: str, category_id: Optio
                  event_date: str, start_time: Optional[str], end_time: Optional[str],
                  is_all_day: bool, assigned_to_user_id: int,
                  update_all_recurring: bool = False,
-                 category_color: Optional[str] = None) -> bool:
+                 category_color: Optional[str] = None,
+                 category_icon: Optional[str] = None) -> bool:
     with get_connection() as conn:
         cursor = conn.cursor()
         
-        if category_color:
+        if category_color or category_icon:
             if category_id:
-                cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+                up_fields = []
+                up_params = []
+                if category_color:
+                    up_fields.append("color = ?")
+                    up_params.append(category_color)
+                if category_icon:
+                    up_fields.append("icon = ?")
+                    up_params.append(category_icon)
+                up_params.append(category_id)
+                cursor.execute(f"UPDATE categories SET {', '.join(up_fields)} WHERE id = ?", tuple(up_params))
             else:
                 cursor.execute("SELECT category_id, title FROM events WHERE id = ?", (event_id,))
                 ev_row = cursor.fetchone()
                 if ev_row and ev_row["category_id"]:
                     category_id = ev_row["category_id"]
-                    cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+                    up_fields = []
+                    up_params = []
+                    if category_color:
+                        up_fields.append("color = ?")
+                        up_params.append(category_color)
+                    if category_icon:
+                        up_fields.append("icon = ?")
+                        up_params.append(category_icon)
+                    up_params.append(category_id)
+                    cursor.execute(f"UPDATE categories SET {', '.join(up_fields)} WHERE id = ?", tuple(up_params))
                 elif ev_row:
                     cat_name = title or ev_row["title"]
                     cursor.execute("SELECT id FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1", (cat_name,))
                     c_found = cursor.fetchone()
                     if c_found:
                         category_id = c_found["id"]
-                        cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+                        up_fields = []
+                        up_params = []
+                        if category_color:
+                            up_fields.append("color = ?")
+                            up_params.append(category_color)
+                        if category_icon:
+                            up_fields.append("icon = ?")
+                            up_params.append(category_icon)
+                        up_params.append(category_id)
+                        cursor.execute(f"UPDATE categories SET {', '.join(up_fields)} WHERE id = ?", tuple(up_params))
                     else:
-                        cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, '📅')", (cat_name, category_color))
+                        cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, ?)", (cat_name, category_color or '#3b82f6', category_icon or '📅'))
                         category_id = cursor.lastrowid
 
         if update_all_recurring:
@@ -791,7 +838,8 @@ def get_timetable(user_id: int) -> List[Dict[str, Any]]:
 def save_timetable_slot(user_id: int, day_of_week: int, period_number: Optional[int] = None,
                         category_id: Optional[int] = None, subject_name: str = "Materia",
                         start_time: str = "08:00", end_time: str = "09:00", room: str = '',
-                        category_color: Optional[str] = None) -> int:
+                        category_color: Optional[str] = None,
+                        category_icon: Optional[str] = None) -> int:
     """Inserisce o aggiorna una singola materia nell'orario scolastico."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -810,13 +858,31 @@ def save_timetable_slot(user_id: int, day_of_week: int, period_number: Optional[
                 cat_row = cursor.fetchone()
             if cat_row:
                 category_id = cat_row["id"]
-                if category_color:
-                    cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+                if category_color or category_icon:
+                    up_fields = []
+                    up_params = []
+                    if category_color:
+                        up_fields.append("color = ?")
+                        up_params.append(category_color)
+                    if category_icon:
+                        up_fields.append("icon = ?")
+                        up_params.append(category_icon)
+                    up_params.append(category_id)
+                    cursor.execute(f"UPDATE categories SET {', '.join(up_fields)} WHERE id = ?", tuple(up_params))
             else:
-                cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, '📚')", (subject_name, category_color or '#3b82f6'))
+                cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, ?)", (subject_name, category_color or '#3b82f6', category_icon or '📚'))
                 category_id = cursor.lastrowid
-        elif category_color:
-            cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+        elif category_color or category_icon:
+            up_fields = []
+            up_params = []
+            if category_color:
+                up_fields.append("color = ?")
+                up_params.append(category_color)
+            if category_icon:
+                up_fields.append("icon = ?")
+                up_params.append(category_icon)
+            up_params.append(category_id)
+            cursor.execute(f"UPDATE categories SET {', '.join(up_fields)} WHERE id = ?", tuple(up_params))
 
         cursor.execute("""
             INSERT INTO timetable_slots (user_id, day_of_week, period_number, category_id, subject_name, start_time, end_time, room)
@@ -862,14 +928,24 @@ def update_timetable_slot(slot_id: int, user_id: Optional[int] = None, **kwargs)
 
         color_updated = False
         cat_color = kwargs.get("category_color")
-        if cat_color:
+        cat_icon = kwargs.get("category_icon")
+        if cat_color or cat_icon:
             current_cat_id = kwargs.get("category_id") or old_slot["category_id"]
             if current_cat_id:
-                cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (cat_color, current_cat_id))
+                up_fields = []
+                up_params = []
+                if cat_color:
+                    up_fields.append("color = ?")
+                    up_params.append(cat_color)
+                if cat_icon:
+                    up_fields.append("icon = ?")
+                    up_params.append(cat_icon)
+                up_params.append(current_cat_id)
+                cursor.execute(f"UPDATE categories SET {', '.join(up_fields)} WHERE id = ?", tuple(up_params))
                 color_updated = True
             else:
                 sub_n = kwargs.get("subject_name") or old_slot["subject_name"]
-                cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, '📚')", (sub_n, cat_color))
+                cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, ?)", (sub_n, cat_color or '#3b82f6', cat_icon or '📚'))
                 new_cat_id = cursor.lastrowid
                 kwargs["category_id"] = new_cat_id
                 color_updated = True

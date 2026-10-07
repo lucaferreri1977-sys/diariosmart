@@ -209,6 +209,7 @@ const FirebaseService = {
       if (slotData.end_time !== undefined) updateObj.end_time = slotData.end_time;
       if (slotData.room !== undefined) updateObj.room = slotData.room;
       if (slotData.category_color !== undefined) updateObj.category_color = slotData.category_color;
+      if (slotData.category_icon !== undefined) updateObj.category_icon = slotData.category_icon;
       updateObj.updated_at = new Date().toISOString();
 
       await slotRef.update(updateObj);
@@ -758,6 +759,7 @@ const FirebaseService = {
       if (eventData.event_date !== undefined) updateObj.event_date = eventData.event_date;
       if (eventData.category_id !== undefined) updateObj.category_id = eventData.category_id;
       if (eventData.category_color !== undefined) updateObj.category_color = eventData.category_color;
+      if (eventData.category_icon !== undefined) updateObj.category_icon = eventData.category_icon;
       updateObj.updated_at = new Date().toISOString();
 
       await evRef.update(updateObj);

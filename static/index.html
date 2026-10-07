@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>DiarioSmart - Diario & Calendario Scolastico</title>
-  <link rel="stylesheet" href="/css/style.css?v=7.9">
+  <link rel="stylesheet" href="/css/style.css?v=8.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -600,6 +600,24 @@
             <input type="hidden" id="subjectSelectedColor" value="#3b82f6" />
           </div>
 
+          <!-- Scelta Icona o Emoji Materia o Evento -->
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span>🏷️ Icona / Simbolo</span>
+              <span id="subjectSelectedIconPreview" style="font-size: 18px; font-weight: 700;">📚</span>
+            </label>
+            <div class="subject-icon-picker-wrap">
+              <div class="icon-palette-grid" id="subjectIconPalette"></div>
+              <div class="custom-icon-row">
+                <div class="custom-icon-badge" id="customIconBadge" title="Inserisci una emoji personalizzata">
+                  <span class="custom-icon-label">Altra emoji:</span>
+                  <input type="text" id="subjectCustomIconInput" maxlength="4" placeholder="es. 🎸" />
+                </div>
+              </div>
+            </div>
+            <input type="hidden" id="subjectSelectedIcon" value="📚" />
+          </div>
+
           <div class="form-group">
             <label for="subjectDaySelect">📅 Giorno della Settimana *</label>
             <select id="subjectDaySelect" class="form-select" required>
@@ -692,12 +710,12 @@
   <!-- Scripts -->
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
-  <script src="/js/firebase-service.js?v=7.9"></script>
-  <script src="/js/api.js?v=7.9"></script>
-  <script src="/js/timer.js?v=7.9"></script>
-  <script src="/js/calendar.js?v=7.9"></script>
-  <script src="/js/stats.js?v=7.9"></script>
-  <script src="/js/app.js?v=7.9"></script>
+  <script src="/js/firebase-service.js?v=8.0"></script>
+  <script src="/js/api.js?v=8.0"></script>
+  <script src="/js/timer.js?v=8.0"></script>
+  <script src="/js/calendar.js?v=8.0"></script>
+  <script src="/js/stats.js?v=8.0"></script>
+  <script src="/js/app.js?v=8.0"></script>
   <script>
     // Palette Colori Materia o Evento
     window.SUBJECT_COLOR_PALETTE = [
@@ -715,6 +733,12 @@
       "#a855f7", // Porpora
       "#f43f5e", // Magenta
       "#64748b"  // Ardesia
+    ];
+
+    // Palette Icone / Simboli Materia o Evento
+    window.SUBJECT_ICON_PALETTE = [
+      "📚", "📐", "📖", "🇬🇧", "🔬", "🌍", "🎨", "🎵", "💻", "🏛️",
+      "⚽", "🏀", "🏊", "🥋", "🏃", "🎾", "🎭", "♟️", "🩺", "⭐"
     ];
 
     window.setSubjectModalColor = function(color) {
@@ -786,11 +810,80 @@
       }
     };
 
-    // Inizializza palette subito e al caricamento DOM
+    window.setSubjectModalIcon = function(icon) {
+      if (!icon) icon = "📚";
+      var hiddenInput = document.getElementById("subjectSelectedIcon");
+      if (hiddenInput) hiddenInput.value = icon;
+
+      var preview = document.getElementById("subjectSelectedIconPreview");
+      if (preview) preview.textContent = icon;
+
+      var customInput = document.getElementById("subjectCustomIconInput");
+      var badge = document.getElementById("customIconBadge");
+
+      var swatches = document.querySelectorAll("#subjectIconPalette .icon-swatch-btn");
+      var isPreset = false;
+      swatches.forEach(function(sw) {
+        var ic = sw.getAttribute("data-icon") || "";
+        if (ic === icon) {
+          sw.classList.add("active");
+          isPreset = true;
+        } else {
+          sw.classList.remove("active");
+        }
+      });
+
+      if (badge) {
+        if (!isPreset) {
+          badge.classList.add("active");
+          if (customInput && customInput.value !== icon) customInput.value = icon;
+        } else {
+          badge.classList.remove("active");
+          if (customInput) customInput.value = "";
+        }
+      }
+    };
+
+    window.initSubjectIconPicker = function() {
+      var container = document.getElementById("subjectIconPalette");
+      if (!container) return;
+      container.innerHTML = "";
+
+      window.SUBJECT_ICON_PALETTE.forEach(function(ic) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "icon-swatch-btn";
+        btn.setAttribute("data-icon", ic);
+        btn.textContent = ic;
+        btn.title = ic;
+        btn.addEventListener("click", function(e) {
+          e.preventDefault();
+          window.setSubjectModalIcon(ic);
+        });
+        container.appendChild(btn);
+      });
+
+      var customInput = document.getElementById("subjectCustomIconInput");
+      if (customInput) {
+        customInput.addEventListener("input", function() {
+          var val = this.value.trim();
+          if (val) {
+            window.setSubjectModalIcon(val);
+          }
+        });
+      }
+    };
+
+    // Inizializza palette colori e icone subito e al caricamento DOM
+    function initSubjectPickers() {
+      if (typeof window.initSubjectColorPicker === "function") window.initSubjectColorPicker();
+      if (typeof window.initSubjectIconPicker === "function") window.initSubjectIconPicker();
+    }
+
     if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", window.initSubjectColorPicker);
+      document.addEventListener("DOMContentLoaded", initSubjectPickers);
     } else {
-      window.initSubjectColorPicker();
+      initSubjectPickers();
     }
 
     // Gestione apertura modale Aggiungi Materia o Evento
@@ -830,6 +923,9 @@
       if (typeof window.setSubjectModalColor === "function") {
         window.setSubjectModalColor("#3b82f6");
       }
+      if (typeof window.setSubjectModalIcon === "function") {
+        window.setSubjectModalIcon("📚");
+      }
     };
 
     // Gestione apertura modale Modifica Materia o Evento
@@ -866,6 +962,9 @@
 
       if (typeof window.setSubjectModalColor === "function") {
         window.setSubjectModalColor(subData.category_color || "#3b82f6");
+      }
+      if (typeof window.setSubjectModalIcon === "function") {
+        window.setSubjectModalIcon(subData.category_icon || "📚");
       }
     };
 

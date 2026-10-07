@@ -328,6 +328,75 @@ def run_tests():
     database.delete_event(color_ev_id)
     print("✅ Test 11 superato! Colore personalizzato salvato, aggiornato e visualizzato correttamente in orario ed eventi.")
 
+    # Test 12: Selezione e persistenza icona personalizzata (emoji) per materie ed eventi
+    print("Test 12: Selezione e persistenza icona personalizzata per materie ed eventi...")
+    icon_slot_id = database.save_timetable_slot(
+        user_id=c_user["id"],
+        day_of_week=3,
+        period_number=1,
+        subject_name="Disegno Artistico",
+        start_time="09:00",
+        end_time="10:00",
+        category_color="#ec4899",
+        category_icon="🎨"
+    )
+    assert icon_slot_id > 0
+    tt_slots = database.get_timetable(c_user["id"])
+    disegno_slot = next((s for s in tt_slots if s["id"] == icon_slot_id), None)
+    assert disegno_slot is not None
+    assert disegno_slot["category_icon"] == "🎨", f"Icona attesa 🎨, trovata {disegno_slot.get('category_icon')}"
+
+    # Modifica icona dello slot
+    upd_icon_ok = database.update_timetable_slot(
+        slot_id=icon_slot_id,
+        user_id=c_user["id"],
+        category_icon="🎭"
+    )
+    assert upd_icon_ok is True
+    tt_slots_upd = database.get_timetable(c_user["id"])
+    disegno_upd = next((s for s in tt_slots_upd if s["id"] == icon_slot_id), None)
+    assert disegno_upd["category_icon"] == "🎭", f"Icona aggiornata attesa 🎭, trovata {disegno_upd.get('category_icon')}"
+
+    # Evento con icona sport/attività
+    icon_ev_id = database.create_event(
+        title="Partita Calcio",
+        event_date="2026-10-07",
+        start_time="18:00",
+        end_time="19:30",
+        is_all_day=False,
+        assigned_to_user_id=c_user["id"],
+        created_by_user_id=p_user["id"],
+        category_color="#10b981",
+        category_icon="⚽"
+    )
+    assert icon_ev_id > 0
+    wed_sched = database.get_daily_schedule(c_user["id"], "2026-10-07")
+    calcio_card = next((s for s in wed_sched["subjects"] if s["subject_name"] == "Partita Calcio"), None)
+    assert calcio_card is not None
+    assert calcio_card["category_icon"] == "⚽", f"Icona evento attesa ⚽, trovata {calcio_card.get('category_icon')}"
+
+    # Aggiorna icona evento
+    upd_ev_ok = database.update_event(
+        event_id=icon_ev_id,
+        title="Partita Calcio Finale",
+        description="",
+        category_id=None,
+        event_date="2026-10-07",
+        start_time="18:00",
+        end_time="19:30",
+        is_all_day=False,
+        assigned_to_user_id=c_user["id"],
+        category_icon="🏆"
+    )
+    assert upd_ev_ok is True
+    ev_det = database.get_event_details(icon_ev_id)
+    assert ev_det["category_icon"] == "🏆", f"Icona evento aggiornata attesa 🏆, trovata {ev_det.get('category_icon')}"
+
+    # Pulizia test 12
+    database.delete_timetable_slot(icon_slot_id, user_id=c_user["id"])
+    database.delete_event(icon_ev_id)
+    print("✅ Test 12 superato! Icona personalizzata salvata, aggiornata e collegata correttamente a calendario e orario.")
+
     # Cleanup evento di test 1, slot di test 6 e compito rapido di test 6
     database.delete_todo_item(quick_item["id"])
     database.delete_timetable_slot(test_slot_id, user_id=c_user["id"])

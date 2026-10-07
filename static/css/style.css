@@ -5055,3 +5055,104 @@ input[type="number"] {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
+/* ==================== PALETTE ICONE / EMOJI MATERIA O EVENTO ==================== */
+.subject-icon-picker-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-body, #f8fafc);
+  padding: 12px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.icon-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+  align-items: center;
+}
+
+@media (max-width: 480px) {
+  .icon-palette-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+}
+
+.icon-swatch-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background: #ffffff;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  font-size: 18px;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.icon-swatch-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  background: #f1f5f9;
+}
+
+.icon-swatch-btn.active {
+  border-color: var(--primary, #3b82f6);
+  background: #eff6ff;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+.custom-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color, #e2e8f0);
+}
+
+.custom-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #ffffff;
+  border: 1px solid var(--border-color, #cbd5e1);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main, #334155);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.custom-icon-badge.active {
+  border-color: var(--primary, #3b82f6);
+  background: #eff6ff;
+  color: var(--primary, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.custom-icon-badge input[type="text"] {
+  width: 54px;
+  text-align: center;
+  font-size: 16px;
+  border: 1px solid var(--border-color, #cbd5e1);
+  border-radius: 6px;
+  padding: 2px 4px;
+  background: #fff;
+  outline: none;
+}
+
+.custom-icon-badge input[type="text"]:focus {
+  border-color: var(--primary, #3b82f6);
+}
+
+

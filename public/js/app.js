@@ -349,6 +349,9 @@ const App = {
     if (typeof window.setSubjectModalColor === "function") {
       window.setSubjectModalColor("#3b82f6");
     }
+    if (typeof window.setSubjectModalIcon === "function") {
+      window.setSubjectModalIcon("📚");
+    }
 
     setTimeout(() => {
       nameInput?.focus();
@@ -368,6 +371,7 @@ const App = {
     const endTime = document.getElementById("subjectEndTimeInput")?.value || "09:00";
     const isRecurring = document.getElementById("subjectRecurringCheck")?.checked !== false;
     const categoryColor = document.getElementById("subjectSelectedColor")?.value || "#3b82f6";
+    const categoryIcon = document.getElementById("subjectSelectedIcon")?.value || "📚";
 
     if (!name) {
       alert("Inserisci il nome della materia o evento.");
@@ -410,7 +414,8 @@ const App = {
           subject_name: name,
           start_time: startTime,
           end_time: endTime,
-          category_color: categoryColor
+          category_color: categoryColor,
+          category_icon: categoryIcon
         });
         this.showToast(`"${name}" aggiornato con successo!`, "✏️");
       } else if (editEventId) {
@@ -419,7 +424,8 @@ const App = {
           start_time: startTime,
           end_time: endTime,
           event_date: dateIso,
-          category_color: categoryColor
+          category_color: categoryColor,
+          category_icon: categoryIcon
         });
         this.showToast(`"${name}" aggiornato con successo!`, "✏️");
       } else if (isRecurring) {
@@ -428,7 +434,8 @@ const App = {
           subject_name: name,
           start_time: startTime,
           end_time: endTime,
-          category_color: categoryColor
+          category_color: categoryColor,
+          category_icon: categoryIcon
         });
         this.showToast(`"${name}" aggiunto all'orario settimanale!`, "📚");
       } else {
@@ -444,7 +451,8 @@ const App = {
           assigned_to_user_id: childUser ? childUser.id : this.currentUser.id,
           is_recurring_weekly: false,
           repeat_weeks: 1,
-          category_color: categoryColor
+          category_color: categoryColor,
+          category_icon: categoryIcon
         });
         this.showToast(`"${name}" aggiunto per ${dateIso}!`, "📅");
       }

@@ -220,7 +220,7 @@ const StatsDashboard = {
       header.innerHTML = `
         <div class="parent-subject-header-info">
           <span style="font-weight: 800; font-size: 15px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-            ${sub.subject_name}
+            ${sub.category_icon ? `<span style="margin-right:6px;">${sub.category_icon}</span>` : ''}${sub.subject_name}
           </span>
           <span style="font-size: 12px; color: var(--text-muted); font-weight: 600; background: #f1f5f9; padding: 2px 8px; border-radius: 6px; white-space: nowrap;">
             ${sub.start_time} - ${sub.end_time}
@@ -252,7 +252,8 @@ const StatsDashboard = {
               day_of_week: this.selectedDayOfWeek || sub.day_of_week || 1,
               start_time: sub.start_time,
               end_time: sub.end_time,
-              category_color: sub.category_color
+              category_color: sub.category_color,
+              category_icon: sub.category_icon
             });
           }
         });

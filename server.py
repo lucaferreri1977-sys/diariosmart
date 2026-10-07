@@ -322,7 +322,8 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
                 created_by_user_id=user["id"],
                 is_recurring_weekly=bool(body.get("is_recurring_weekly", False)),
                 repeat_weeks=int(body.get("repeat_weeks", 1)),
-                category_color=body.get("category_color")
+                category_color=body.get("category_color"),
+                category_icon=body.get("category_icon")
             )
             return self.send_json(201, {"ok": True, "id": event_id})
 
@@ -379,7 +380,8 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
                     start_time=body.get("start_time", "08:00"),
                     end_time=body.get("end_time", "09:00"),
                     room=body.get("room", ""),
-                    category_color=body.get("category_color")
+                    category_color=body.get("category_color"),
+                    category_icon=body.get("category_icon")
                 )
                 return self.send_json(201, {"ok": True, "id": slot_id})
 
@@ -449,7 +451,8 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
                 is_all_day=body.get("is_all_day", False),
                 assigned_to_user_id=assigned_id,
                 update_all_recurring=update_all,
-                category_color=body.get("category_color")
+                category_color=body.get("category_color"),
+                category_icon=body.get("category_icon")
             )
             return self.send_json(200, {"ok": success})
 
@@ -485,7 +488,8 @@ class CalendarRequestHandler(SimpleHTTPRequestHandler):
                 start_time=body.get("start_time"),
                 end_time=body.get("end_time"),
                 room=body.get("room"),
-                category_color=body.get("category_color")
+                category_color=body.get("category_color"),
+                category_icon=body.get("category_icon")
             )
             return self.send_json(200, {"ok": success})
 

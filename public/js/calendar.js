@@ -310,9 +310,10 @@ const Calendar = {
             subHeader.className = "week-subject-header";
             subHeader.title = `Clicca per aprire la materia nel diario del giorno`;
             const displayName = sub.subject_name || sub.title || "Materia";
+            const iconSpan = sub.category_icon ? `<span style="margin-right:5px;">${sub.category_icon}</span>` : '';
             subHeader.innerHTML = `
               <div class="week-subject-header-title">
-                <span>${displayName}</span>
+                ${iconSpan}<span>${displayName}</span>
               </div>
               <span class="week-subject-header-time">${sub.start_time || '08:00'}${sub.end_time ? ' - ' + sub.end_time : ''}</span>
             `;
@@ -709,7 +710,7 @@ const Calendar = {
           <span class="daily-event-time">🕒 ${sub.start_time}${sub.end_time ? ' - ' + sub.end_time : ''}</span>
         </div>
         <div class="daily-event-title-row">
-          <span class="daily-event-name">${sub.subject_name}</span>
+          <span class="daily-event-name">${sub.category_icon ? `<span style="margin-right:6px;">${sub.category_icon}</span>` : ''}${sub.subject_name}</span>
           ${sub.room ? `<span class="subject-room-badge" style="font-size:10px;">${sub.room}</span>` : ''}
         </div>
         <div class="daily-event-bottom">
@@ -754,7 +755,7 @@ const Calendar = {
 
     const currentSub = this.selectedSubjectEventId ? subjects.find(s => String(s.event_id) === String(this.selectedSubjectEventId)) : null;
     if (currentSub) {
-      input.placeholder = `✏️ Aggiungi compito per ${currentSub.subject_name}...`;
+      input.placeholder = `✏️ Aggiungi compito per ${currentSub.category_icon ? currentSub.category_icon + ' ' : ''}${currentSub.subject_name}...`;
     } else {
       input.placeholder = "✏️ Aggiungi un compito o esercizio da fare...";
     }
@@ -794,7 +795,7 @@ const Calendar = {
       const currentSub = subjects.find(s => String(s.event_id) === String(this.selectedSubjectEventId));
       if (currentSub) {
         if (titleEl) {
-          titleEl.innerHTML = `📝 Compiti di <span style="color:${currentSub.category_color || 'var(--primary)'}; font-weight:800;">${currentSub.subject_name}</span>`;
+          titleEl.innerHTML = `${currentSub.category_icon ? currentSub.category_icon + ' ' : '📝 '}Compiti di <span style="color:${currentSub.category_color || 'var(--primary)'}; font-weight:800;">${currentSub.subject_name}</span>`;
         }
         items = (sched.unified_todos || []).filter(i => 
           String(i.event_id) === String(currentSub.event_id) ||
@@ -864,7 +865,7 @@ const Calendar = {
       pill.className = "todo-item-subject-pill";
       pill.style.background = item.category_color || "#3b82f6";
       pill.style.color = "#ffffff";
-      pill.innerHTML = `<span>${item.subject_name}</span>`;
+      pill.innerHTML = `<span>${item.category_icon ? item.category_icon + ' ' : ''}${item.subject_name}</span>`;
 
       const titleSpan = document.createElement("span");
       titleSpan.className = "todo-item-title";
