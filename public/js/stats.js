@@ -251,7 +251,8 @@ const StatsDashboard = {
               subject_name: sub.subject_name,
               day_of_week: this.selectedDayOfWeek || sub.day_of_week || 1,
               start_time: sub.start_time,
-              end_time: sub.end_time
+              end_time: sub.end_time,
+              category_color: sub.category_color
             });
           }
         });

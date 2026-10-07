@@ -581,20 +581,23 @@
         <div class="modal-body">
           <div class="form-group">
             <label for="subjectNameInput">Nome Materia o Evento *</label>
-            <input type="text" id="subjectNameInput" class="form-control" placeholder="es. Matematica, Italiano, Partita, Allenamento, Corso..." list="subjectSuggestionsList" required />
-            <datalist id="subjectSuggestionsList">
-              <option value="Matematica"></option>
-              <option value="Italiano"></option>
-              <option value="Inglese"></option>
-              <option value="Scienze"></option>
-              <option value="Storia"></option>
-              <option value="Geografia"></option>
-              <option value="Arte"></option>
-              <option value="Musica"></option>
-              <option value="Tecnologia"></option>
-              <option value="Scienze Motorie"></option>
-              <option value="Studio Guidato"></option>
-            </datalist>
+            <input type="text" id="subjectNameInput" class="form-control" placeholder="es. Matematica, Italiano, Partita, Allenamento, Corso..." autocomplete="off" required />
+          </div>
+
+          <!-- Selezione Colore nel Calendario -->
+          <div class="form-group">
+            <label>🎨 Colore nel Calendario *</label>
+            <div class="subject-color-picker-wrap">
+              <div class="color-palette-grid" id="subjectColorPalette"></div>
+              <div class="custom-color-row">
+                <label class="custom-color-badge" id="customColorBadge" for="subjectCustomColorPicker" title="Scegli un colore personalizzato">
+                  <input type="color" id="subjectCustomColorPicker" value="#3b82f6" />
+                  <span class="custom-color-dot" id="customColorDot"></span>
+                  <span class="custom-color-label" id="customColorLabelText">Altro colore...</span>
+                </label>
+              </div>
+            </div>
+            <input type="hidden" id="subjectSelectedColor" value="#3b82f6" />
           </div>
 
           <div class="form-group">
@@ -696,6 +699,100 @@
   <script src="/js/stats.js?v=7.8"></script>
   <script src="/js/app.js?v=7.8"></script>
   <script>
+    // Palette Colori Materia o Evento
+    window.SUBJECT_COLOR_PALETTE = [
+      "#3b82f6", // Blu
+      "#8b5cf6", // Viola
+      "#ec4899", // Rosa
+      "#ef4444", // Rosso
+      "#f97316", // Arancione
+      "#eab308", // Giallo
+      "#10b981", // Smeraldo
+      "#06b6d4", // Ciano
+      "#6366f1", // Indaco
+      "#14b8a6", // Teal
+      "#84cc16", // Lime
+      "#a855f7", // Porpora
+      "#f43f5e", // Magenta
+      "#64748b"  // Ardesia
+    ];
+
+    window.setSubjectModalColor = function(color) {
+      if (!color) color = "#3b82f6";
+      var normColor = color.toLowerCase();
+      var hiddenInput = document.getElementById("subjectSelectedColor");
+      if (hiddenInput) hiddenInput.value = normColor;
+
+      var customInput = document.getElementById("subjectCustomColorPicker");
+      if (customInput) customInput.value = normColor;
+
+      var customDot = document.getElementById("customColorDot");
+      if (customDot) customDot.style.backgroundColor = normColor;
+
+      var badge = document.getElementById("customColorBadge");
+      var labelText = document.getElementById("customColorLabelText");
+
+      var swatches = document.querySelectorAll("#subjectColorPalette .color-swatch-btn");
+      var isPreset = false;
+      swatches.forEach(function(sw) {
+        var c = (sw.getAttribute("data-color") || "").toLowerCase();
+        if (c === normColor) {
+          sw.classList.add("active");
+          isPreset = true;
+        } else {
+          sw.classList.remove("active");
+        }
+      });
+
+      if (badge) {
+        if (!isPreset) {
+          badge.classList.add("active");
+          if (labelText) labelText.textContent = normColor.toUpperCase();
+        } else {
+          badge.classList.remove("active");
+          if (labelText) labelText.textContent = "Altro colore...";
+        }
+      }
+    };
+
+    window.initSubjectColorPicker = function() {
+      var container = document.getElementById("subjectColorPalette");
+      if (!container) return;
+      container.innerHTML = "";
+
+      window.SUBJECT_COLOR_PALETTE.forEach(function(col) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "color-swatch-btn";
+        btn.setAttribute("data-color", col);
+        btn.style.backgroundColor = col;
+        btn.title = col;
+        btn.innerHTML = '<span class="swatch-check">✓</span>';
+        btn.addEventListener("click", function(e) {
+          e.preventDefault();
+          window.setSubjectModalColor(col);
+        });
+        container.appendChild(btn);
+      });
+
+      var customPicker = document.getElementById("subjectCustomColorPicker");
+      if (customPicker) {
+        customPicker.addEventListener("input", function() {
+          window.setSubjectModalColor(this.value);
+        });
+        customPicker.addEventListener("change", function() {
+          window.setSubjectModalColor(this.value);
+        });
+      }
+    };
+
+    // Inizializza palette subito e al caricamento DOM
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", window.initSubjectColorPicker);
+    } else {
+      window.initSubjectColorPicker();
+    }
+
     // Gestione apertura modale Aggiungi Materia o Evento
     window.openSubjectModal = function(preselectedDow) {
       var m = document.getElementById("subjectModal");
@@ -729,6 +826,10 @@
       if (endInput) endInput.value = "09:00";
       var recCheck = document.getElementById("subjectRecurringCheck");
       if (recCheck) recCheck.checked = true;
+
+      if (typeof window.setSubjectModalColor === "function") {
+        window.setSubjectModalColor("#3b82f6");
+      }
     };
 
     // Gestione apertura modale Modifica Materia o Evento
@@ -762,6 +863,10 @@
       if (endInput) endInput.value = subData.end_time || "09:00";
       var recCheck = document.getElementById("subjectRecurringCheck");
       if (recCheck) recCheck.checked = !!subData.slot_id;
+
+      if (typeof window.setSubjectModalColor === "function") {
+        window.setSubjectModalColor(subData.category_color || "#3b82f6");
+      }
     };
 
     window.closeSubjectModal = function() {

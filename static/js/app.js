@@ -346,6 +346,10 @@ const App = {
     const recCheck = document.getElementById("subjectRecurringCheck");
     if (recCheck) recCheck.checked = true;
 
+    if (typeof window.setSubjectModalColor === "function") {
+      window.setSubjectModalColor("#3b82f6");
+    }
+
     setTimeout(() => {
       nameInput?.focus();
     }, 50);
@@ -363,6 +367,7 @@ const App = {
     const startTime = document.getElementById("subjectStartTimeInput")?.value || "08:00";
     const endTime = document.getElementById("subjectEndTimeInput")?.value || "09:00";
     const isRecurring = document.getElementById("subjectRecurringCheck")?.checked !== false;
+    const categoryColor = document.getElementById("subjectSelectedColor")?.value || "#3b82f6";
 
     if (!name) {
       alert("Inserisci il nome della materia o evento.");
@@ -404,7 +409,8 @@ const App = {
           day_of_week: dayOfWeek,
           subject_name: name,
           start_time: startTime,
-          end_time: endTime
+          end_time: endTime,
+          category_color: categoryColor
         });
         this.showToast(`"${name}" aggiornato con successo!`, "✏️");
       } else if (editEventId) {
@@ -412,7 +418,8 @@ const App = {
           title: name,
           start_time: startTime,
           end_time: endTime,
-          event_date: dateIso
+          event_date: dateIso,
+          category_color: categoryColor
         });
         this.showToast(`"${name}" aggiornato con successo!`, "✏️");
       } else if (isRecurring) {
@@ -420,7 +427,8 @@ const App = {
           day_of_week: dayOfWeek,
           subject_name: name,
           start_time: startTime,
-          end_time: endTime
+          end_time: endTime,
+          category_color: categoryColor
         });
         this.showToast(`"${name}" aggiunto all'orario settimanale!`, "📚");
       } else {
@@ -435,7 +443,8 @@ const App = {
           is_all_day: false,
           assigned_to_user_id: childUser ? childUser.id : this.currentUser.id,
           is_recurring_weekly: false,
-          repeat_weeks: 1
+          repeat_weeks: 1,
+          category_color: categoryColor
         });
         this.showToast(`"${name}" aggiunto per ${dateIso}!`, "📅");
       }

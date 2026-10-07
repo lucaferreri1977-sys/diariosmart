@@ -279,6 +279,55 @@ def run_tests():
     assert not any(s["subject_name"] == "Partita" for s in sun_sched_after["subjects"]), "Evento non rimosso dopo eliminazione"
     print("✅ Test 10 superato! Eventi singoli (Partita / Test) integrati perfettamente in daily schedule e to-do!")
 
+    # Test 11: Selezione e persistenza colore personalizzato per materie ed eventi
+    print("Test 11: Selezione e persistenza colore personalizzato per materie ed eventi...")
+    color_slot_id = database.save_timetable_slot(
+        user_id=c_user["id"],
+        day_of_week=3, # Mercoledì
+        subject_name="Arte e Disegno",
+        start_time="10:00",
+        end_time="11:00",
+        category_color="#ec4899" # Rosa
+    )
+    assert color_slot_id > 0, "Salvataggio slot con colore fallito"
+    tt_slots = database.get_timetable(c_user["id"])
+    arte_slot = next((s for s in tt_slots if s["id"] == color_slot_id), None)
+    assert arte_slot is not None
+    assert arte_slot["category_color"] == "#ec4899", f"Colore atteso #ec4899, trovato {arte_slot.get('category_color')}"
+
+    # Aggiorna il colore dello slot a verde (#10b981)
+    upd_ok = database.update_timetable_slot(
+        slot_id=color_slot_id,
+        user_id=c_user["id"],
+        category_color="#10b981"
+    )
+    assert upd_ok is True
+    tt_slots_upd = database.get_timetable(c_user["id"])
+    arte_slot_upd = next((s for s in tt_slots_upd if s["id"] == color_slot_id), None)
+    assert arte_slot_upd["category_color"] == "#10b981", f"Colore aggiornato atteso #10b981, trovato {arte_slot_upd.get('category_color')}"
+
+    # Verifica anche evento singolo con colore personalizzato
+    color_ev_id = database.create_event(
+        title="Torneo Scacchi",
+        event_date="2026-10-07",
+        start_time="16:00",
+        end_time="18:00",
+        is_all_day=False,
+        assigned_to_user_id=c_user["id"],
+        created_by_user_id=p_user["id"],
+        category_color="#f97316" # Arancione
+    )
+    assert color_ev_id > 0
+    wed_sched = database.get_daily_schedule(c_user["id"], "2026-10-07")
+    scacchi_card = next((s for s in wed_sched["subjects"] if s["subject_name"] == "Torneo Scacchi"), None)
+    assert scacchi_card is not None
+    assert scacchi_card["category_color"] == "#f97316", f"Colore evento atteso #f97316, trovato {scacchi_card.get('category_color')}"
+
+    # Pulizia test 11
+    database.delete_timetable_slot(color_slot_id, user_id=c_user["id"])
+    database.delete_event(color_ev_id)
+    print("✅ Test 11 superato! Colore personalizzato salvato, aggiornato e visualizzato correttamente in orario ed eventi.")
+
     # Cleanup evento di test 1, slot di test 6 e compito rapido di test 6
     database.delete_todo_item(quick_item["id"])
     database.delete_timetable_slot(test_slot_id, user_id=c_user["id"])

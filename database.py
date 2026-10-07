@@ -412,13 +412,27 @@ def get_event_details(event_id: int) -> Optional[Dict[str, Any]]:
         ev["lists"] = lists
         return ev
 
-def create_event(title: str, description: str, category_id: Optional[int], event_date: str,
-                 start_time: Optional[str], end_time: Optional[str], is_all_day: bool,
-                 assigned_to_user_id: int, created_by_user_id: int,
-                 is_recurring_weekly: bool = False, repeat_weeks: int = 1) -> int:
+def create_event(title: str, description: str = "", category_id: Optional[int] = None, event_date: str = "",
+                 start_time: Optional[str] = None, end_time: Optional[str] = None, is_all_day: bool = False,
+                 assigned_to_user_id: int = 1, created_by_user_id: int = 1,
+                 is_recurring_weekly: bool = False, repeat_weeks: int = 1,
+                 category_color: Optional[str] = None) -> int:
     with get_connection() as conn:
         cursor = conn.cursor()
         
+        if category_color:
+            if not category_id:
+                cursor.execute("SELECT id FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1", (title,))
+                c_row = cursor.fetchone()
+                if c_row:
+                    category_id = c_row["id"]
+                    cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+                else:
+                    cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, '📅')", (title, category_color))
+                    category_id = cursor.lastrowid
+            else:
+                cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+
         repeat_count = max(1, int(repeat_weeks)) if is_recurring_weekly else 1
         rec_group_id = f"rec_{secrets.token_hex(8)}" if is_recurring_weekly and repeat_count > 1 else None
         
@@ -443,9 +457,31 @@ def create_event(title: str, description: str, category_id: Optional[int], event
 def update_event(event_id: int, title: str, description: str, category_id: Optional[int],
                  event_date: str, start_time: Optional[str], end_time: Optional[str],
                  is_all_day: bool, assigned_to_user_id: int,
-                 update_all_recurring: bool = False) -> bool:
+                 update_all_recurring: bool = False,
+                 category_color: Optional[str] = None) -> bool:
     with get_connection() as conn:
         cursor = conn.cursor()
+        
+        if category_color:
+            if category_id:
+                cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+            else:
+                cursor.execute("SELECT category_id, title FROM events WHERE id = ?", (event_id,))
+                ev_row = cursor.fetchone()
+                if ev_row and ev_row["category_id"]:
+                    category_id = ev_row["category_id"]
+                    cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+                elif ev_row:
+                    cat_name = title or ev_row["title"]
+                    cursor.execute("SELECT id FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1", (cat_name,))
+                    c_found = cursor.fetchone()
+                    if c_found:
+                        category_id = c_found["id"]
+                        cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
+                    else:
+                        cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, '📅')", (cat_name, category_color))
+                        category_id = cursor.lastrowid
+
         if update_all_recurring:
             cursor.execute("SELECT recurrence_group_id, event_date FROM events WHERE id = ?", (event_id,))
             row = cursor.fetchone()
@@ -754,7 +790,8 @@ def get_timetable(user_id: int) -> List[Dict[str, Any]]:
 
 def save_timetable_slot(user_id: int, day_of_week: int, period_number: Optional[int] = None,
                         category_id: Optional[int] = None, subject_name: str = "Materia",
-                        start_time: str = "08:00", end_time: str = "09:00", room: str = '') -> int:
+                        start_time: str = "08:00", end_time: str = "09:00", room: str = '',
+                        category_color: Optional[str] = None) -> int:
     """Inserisce o aggiorna una singola materia nell'orario scolastico."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -766,14 +803,20 @@ def save_timetable_slot(user_id: int, day_of_week: int, period_number: Optional[
             period_number = cursor.fetchone()[0]
 
         if not category_id:
-            cursor.execute("SELECT id FROM categories WHERE LOWER(TRIM(name)) LIKE LOWER(TRIM(?)) LIMIT 1", (f"%{subject_name}%",))
+            cursor.execute("SELECT id FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1", (subject_name,))
             cat_row = cursor.fetchone()
+            if not cat_row:
+                cursor.execute("SELECT id FROM categories WHERE LOWER(TRIM(name)) LIKE LOWER(TRIM(?)) LIMIT 1", (f"%{subject_name}%",))
+                cat_row = cursor.fetchone()
             if cat_row:
                 category_id = cat_row["id"]
+                if category_color:
+                    cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
             else:
-                cursor.execute("SELECT id FROM categories ORDER BY id ASC LIMIT 1")
-                first_cat = cursor.fetchone()
-                category_id = first_cat["id"] if first_cat else None
+                cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, '📚')", (subject_name, category_color or '#3b82f6'))
+                category_id = cursor.lastrowid
+        elif category_color:
+            cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (category_color, category_id))
 
         cursor.execute("""
             INSERT INTO timetable_slots (user_id, day_of_week, period_number, category_id, subject_name, start_time, end_time, room)
@@ -812,10 +855,24 @@ def delete_timetable_slot(slot_id: int, user_id: Optional[int] = None) -> bool:
 def update_timetable_slot(slot_id: int, user_id: Optional[int] = None, **kwargs) -> bool:
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT user_id, subject_name FROM timetable_slots WHERE id = ?", (slot_id,))
+        cursor.execute("SELECT user_id, subject_name, category_id FROM timetable_slots WHERE id = ?", (slot_id,))
         old_slot = cursor.fetchone()
         if not old_slot:
             return False
+
+        color_updated = False
+        cat_color = kwargs.get("category_color")
+        if cat_color:
+            current_cat_id = kwargs.get("category_id") or old_slot["category_id"]
+            if current_cat_id:
+                cursor.execute("UPDATE categories SET color = ? WHERE id = ?", (cat_color, current_cat_id))
+                color_updated = True
+            else:
+                sub_n = kwargs.get("subject_name") or old_slot["subject_name"]
+                cursor.execute("INSERT INTO categories (name, color, icon) VALUES (?, ?, '📚')", (sub_n, cat_color))
+                new_cat_id = cursor.lastrowid
+                kwargs["category_id"] = new_cat_id
+                color_updated = True
 
         fields = []
         params = []
@@ -824,6 +881,9 @@ def update_timetable_slot(slot_id: int, user_id: Optional[int] = None, **kwargs)
                 fields.append(f"{key} = ?")
                 params.append(kwargs[key])
         if not fields:
+            if color_updated:
+                conn.commit()
+                return True
             return False
 
         query = f"UPDATE timetable_slots SET {', '.join(fields)} WHERE id = ?"
